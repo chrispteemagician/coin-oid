@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Coin-Oid | The Numismatist's Table</title>
+    <meta name="description" content="AI-powered coin identification, grading, and valuation. Upload a photo of any coin, token, medal or banknote. Free forever. Part of the FeelFamous village ecosystem.">
+    <meta name="theme-color" content="#cd7f32">
+    <link rel="icon" type="image/jpeg" href="coin-oid.jpg">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Caveat:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Outfit', sans-serif; font-size: 18px; margin: 0; background: #faf5e1; color: #1a0e08; }
+        h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; }
+        .font-handwritten { font-family: 'Caveat', cursive; }
+
+        /* Scroll snap */
+        html { scroll-behavior: smooth; }
+
+        /* Theme colours */
+        .bg-deep { background: #1a0e08; }
+        .bg-mid { background: #2d1a0f; }
+        .bg-bronze { background: #cd7f32; }
+        .bg-copper { background: #b87333; }
+        .bg-cream { background: #faf5e1; }
+        .text-bronze { color: #cd7f32; }
+        .text-copper { color: #b87333; }
+        .text-cream { color: #faf5e1; }
+        .text-deep { color: #1a0e08; }
+        .border-bronze { border-color: #cd7f32; }
+        .border-copper { border-color: #b87333; }
+
+        .header-gradient { background: linear-gradient(135deg, #1a0e08 0%, #2d1a0f 50%, #4a2c1a 100%); }
+
+        /* Buttons - 48px min targets */
+        .btn { min-height: 48px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: all 0.15s; touch-action: manipulation; display: inline-flex; align-items: center; justify-content: center; padding: 12px 24px; text-decoration: none; font-size: 16px; }
+        .btn:active { transform: scale(0.97); }
+        .btn-bronze { background: linear-gradient(135deg, #cd7f32 0%, #b87333 100%); color: #1a0e08; font-weight: 700; }
+        .btn-bronze:hover { background: linear-gradient(135deg, #d4913e 0%, #c48040 100%); }
+        .btn-dark { background: linear-gradient(135deg, #1a0e08 0%, #2d1a0f 100%); color: #faf5e1; }
+        .btn-dark:hover { background: linear-gradient(135deg, #2d1a0f 0%, #3d2419 100%); }
+        .btn-gold { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: black; font-weight: 700; }
+        .btn-outline { background: transparent; border: 2px solid #cd7f32; color: #cd7f32; }
+        .btn-outline:hover { background: #cd7f32; color: #1a0e08; }
+
+        /* Cards */
+        .card { background: white; border-radius: 20px; box-shadow: 0 4px 20px rgba(26,14,8,0.08); padding: 24px; margin-bottom: 20px; }
+
+        /* Upload boxes */
+        .upload-box { background: #faf5e1; border: 3px dashed #b87333; border-radius: 16px; padding: 32px 16px; text-align: center; cursor: pointer; transition: all 0.2s; min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .upload-box:hover { border-color: #cd7f32; background: #f5edd0; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(205,127,50,0.2); }
+        .upload-box:active { transform: scale(0.98); }
+
+        /* Tabs */
+        .nav-tab { flex: 1; padding: 14px 8px; font-weight: 600; font-size: 14px; border: none; background: transparent; cursor: pointer; min-height: 52px; color: #b87333; border-bottom: 3px solid transparent; transition: all 0.15s; white-space: nowrap; }
+        .nav-tab.active { background: white; color: #cd7f32; font-weight: 700; border-bottom-color: #cd7f32; }
+        .nav-tab:hover:not(.active) { background: rgba(205,127,50,0.08); }
+
+        /* Q&A accordion */
+        .qa-item { border: 2px solid #e5ddd0; border-radius: 16px; margin-bottom: 8px; overflow: hidden; transition: border-color 0.15s; }
+        .qa-item:hover { border-color: #cd7f32; }
+        .qa-question { padding: 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 16px; min-height: 48px; }
+        .qa-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease, padding 0.3s ease; padding: 0 16px; font-size: 15px; color: #4b5563; line-height: 1.6; }
+        .qa-answer.open { max-height: 600px; padding: 0 16px 16px; }
+
+        /* Chat */
+        .chat-container { max-height: 400px; overflow-y: auto; scroll-behavior: smooth; }
+        .chat-bubble { max-width: 85%; padding: 12px 16px; border-radius: 16px; margin-bottom: 8px; font-size: 15px; line-height: 1.5; word-wrap: break-word; }
+        .chat-user { background: #cd7f32; color: #1a0e08; margin-left: auto; border-bottom-right-radius: 4px; }
+        .chat-penny { background: white; color: #1a0e08; border: 2px solid #e5ddd0; border-bottom-left-radius: 4px; }
+        .chat-typing span { animation: blink 1.4s infinite; display: inline-block; }
+        .chat-typing span:nth-child(2) { animation-delay: 0.2s; }
+        .chat-typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+        /* Learn tabs */
+        .learn-tab { padding: 10px 16px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; min-height: 48px; border: 2px solid #e5ddd0; background: white; transition: all 0.15s; }
+        .learn-tab.active { background: #cd7f32; color: #1a0e08; border-color: #cd7f32; }
+        .learn-tab:hover:not(.active) { border-color: #cd7f32; }
+
+        /* Section reveal */
+        .section-fade { opacity: 0; transform: translateY(20px); transition: opacity 0.4s, transform 0.4s; }
+        .section-fade.visible { opacity: 1; transform: translateY(0); }
+
+        /* Result card */
+        .result-card { background: linear-gradient(135deg, #2d1a0f 0%, #1a0e08 100%); color: #faf5e1; border-radius: 24px; padding: 24px; }
+
+        /* Loading */
+        .loading-spinner { animation: spin 1.5s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .pulse { animation: pulse 2s ease-in-out infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+        .modal-content { background: white; border-radius: 24px; padding: 32px; max-width: 420px; width: 100%; }
+
+        .hidden { display: none !important; }
+        [data-tw-portal] > *:not([id]) { display: none !important; }
+
+        /* Amazon button */
+        .amazon-btn { background: #ff9900; color: #111; padding: 12px 20px; border-radius: 10px; font-weight: bold; text-decoration: none; display: inline-block; margin-top: 8px; min-height: 48px; transition: background 0.15s; }
+        .amazon-btn:hover { background: #ffad33; }
+
+        /* Oid grid pill */
+        .oid-pill { display: inline-flex; align-items: center; gap: 4px; padding: 8px 14px; border-radius: 10px; font-weight: 600; font-size: 14px; text-decoration: none; transition: all 0.15s; min-height: 40px; }
+        .oid-pill:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+        /* Noisy Brain */
+        .noisy-brain { background: linear-gradient(135deg, #4338ca 0%, #6d28d9 100%); color: white; border-radius: 20px; padding: 24px; }
+
+        @media (max-width: 640px) {
+            body { font-size: 16px; }
+            .card { padding: 20px; }
+            .nav-tab { font-size: 12px; padding: 12px 4px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ==================== AGE VERIFICATION ==================== -->
+<div id="ageModal" class="modal-overlay hidden">
+    <div class="modal-content text-center">
+        <div class="text-5xl mb-3">🪙</div>
+        <h2 class="text-2xl font-bold mb-3">Welcome to Coin-Oid</h2>
+        <p class="text-gray-600 mb-6">The Numismatist's Table. An adult-focused educational community. Kids are welcome with parent permission.</p>
+        <div class="space-y-3">
+            <button onclick="confirmAge('adult')" class="w-full btn btn-bronze">I'm 18+ (Continue)</button>
+            <button onclick="confirmAge('parent')" class="w-full btn" style="background:#3b82f6;color:white">I'm a Parent/Guardian</button>
+            <button onclick="confirmAge('under18')" class="w-full btn btn-dark">I'm Under 18 (Need Parent OK)</button>
+        </div>
+        <p class="text-xs text-gray-500 mt-6">Safe space for skill-sharing across generations. No social media nonsense. Just real humans helping real humans.</p>
+    </div>
+</div>
+
+<!-- ==================== HEADER ==================== -->
+<header class="header-gradient text-center py-10 px-4">
+    <div class="text-7xl mb-4">🪙</div>
+    <h1 class="text-5xl sm:text-6xl font-extrabold text-cream mb-2">Coin-Oid</h1>
+    <p class="text-xl font-bold text-bronze mb-1">THE NUMISMATIST'S TABLE</p>
+    <p class="font-handwritten text-2xl text-copper opacity-90">"Every coin tells a story"</p>
+</header>
+
+<!-- Free-to-use banner -->
+<div style="background: linear-gradient(135deg, #cd7f32, #b87333);" class="text-center py-3 px-4">
+    <p class="text-sm font-semibold text-deep">
+        <strong>Free to use.</strong> Sign in to join the village — from <strong>£3/month on Patreon</strong>. <a href="https://feelfamous.co.uk" class="underline font-bold">feelfamous.co.uk</a>
+    </p>
+</div>
+
+<!-- Action buttons -->
+<div class="bg-cream py-4 px-4">
+    <div class="max-w-2xl mx-auto flex flex-wrap gap-3 justify-center">
+        <a href="https://feelfamous.co.uk/founders.html" class="btn btn-dark text-sm">Join The Village</a>
+        <a href="mailto:chris@chrisptee.co.uk" class="btn text-sm" style="background:#3b82f6;color:white">Email</a>
+        <a href="https://wa.me/447976884254" class="btn text-sm" style="background:#16a34a;color:white">WhatsApp</a>
+        <a href="https://www.patreon.com/chrisptee" target="_blank" class="btn btn-gold text-sm">Join on Patreon</a>
+    </div>
+</div>
+
+<!-- User Status Bar -->
+<div id="userBar" class="hidden" style="background: linear-gradient(135deg, #cd7f32, #b87333);">
+    <div class="max-w-2xl mx-auto flex items-center justify-between text-sm py-2 px-4 text-deep font-semibold">
+        <div><span id="userBadge"></span> <span id="userName"></span> &bull; <span id="userKudos">0</span> Kudos</div>
+        <button onclick="signOut()" class="underline text-xs">Sign out</button>
+    </div>
+</div>
+
+<!-- ==================== NAVIGATION TABS ==================== -->
+<div style="background: #2d1a0f;" class="border-b border-bronze sticky top-0 z-40">
+    <div class="max-w-2xl mx-auto flex overflow-x-auto">
+        <button onclick="showSection('pageHome')" class="nav-tab active" id="tab-pageHome">🪙 Home</button>
+        <button onclick="showSection('pageLearn')" class="nav-tab" id="tab-pageLearn">📚 Learn</button>
+        <button onclick="showSection('pageQA')" class="nav-tab" id="tab-pageQA">❓ Q&A</button>
+        <button onclick="showSection('pagePenny')" class="nav-tab" id="tab-pagePenny">💬 Penny</button>
+        <button onclick="showSection('pageGear')" class="nav-tab" id="tab-pageGear">🔧 Gear</button>
+        <button onclick="showSection('pageMeet')" class="nav-tab" id="tab-pageMeet">📍 Meet</button>
+        <button onclick="showSection('pageVillage')" class="nav-tab" id="tab-pageVillage">🏘️ Village</button>
+    </div>
+</div>
+
+<!-- ==================== MAIN CONTENT ==================== -->
+<main class="max-w-2xl mx-auto px-4 py-6">
+
+<!-- ============================================================ -->
+<!-- SECTION 1: HOME — AI IDENTIFIER                              -->
+<!-- ============================================================ -->
+<div id="section-pageHome">
+
+    <!-- Old Penny Welcome -->
+    <div class="card" style="background: linear-gradient(135deg, #2d1a0f 0%, #1a0e08 100%); color: #faf5e1;">
+        <h2 class="text-xl font-bold mb-3">Alright! Old Penny here.</h2>
+        <p class="text-sm opacity-90 mb-3">Been on the coin stalls since I was 12, helping me old dad on Portobello Road. Whether you've found a coin in the garden, inherited a collection, or just want to know what that thing in your change jar is &mdash; bring it over.</p>
+        <p class="text-sm opacity-80">Every coin tells a story. Most people just see the price. Let's find the story.</p>
+    </div>
+
+    <!-- Mode Toggle -->
+    <div class="card">
+        <div class="flex gap-2 mb-4">
+            <button onclick="setMode('identify')" id="modeIdentify" class="flex-1 btn btn-bronze text-sm">🔍 Identify</button>
+            <button onclick="setMode('roast')" id="modeRoast" class="flex-1 btn btn-outline text-sm">🔥 Roast My Coins</button>
+        </div>
+
+        <h2 class="text-xl font-bold text-center mb-2" id="oracleTitle">Snap It. Know It. Value It.</h2>
+        <p class="text-gray-500 text-sm text-center mb-6" id="oracleSubtitle">Upload a photo of any coin, token, medal or banknote</p>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div class="upload-box" onclick="document.getElementById('cameraInput').click()">
+                <div class="text-5xl mb-2">📷</div>
+                <p class="font-bold text-sm">Camera</p>
+            </div>
+            <div class="upload-box" onclick="document.getElementById('galleryInput').click()">
+                <div class="text-5xl mb-2">🖼️</div>
+                <p class="font-bold text-sm">Gallery</p>
+            </div>
+        </div>
+
+        <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden" onchange="handleUpload(this)">
+        <input type="file" id="galleryInput" accept="image/*" class="hidden" onchange="handleUpload(this)">
+
+        <p class="text-xs text-gray-400 mt-4 text-center">Both sides helps! Obverse (head) + reverse (tail) gives the best result.</p>
+    </div>
+
+    <!-- Loading state -->
+    <div id="loadingView" class="hidden card text-center py-12">
+        <div class="loading-spinner text-7xl mb-4 inline-block">🪙</div>
+        <p class="text-xl font-bold text-bronze mb-2">Examining the coin...</p>
+        <p id="loadingMessage" class="text-gray-500 text-sm">Checking the mint marks...</p>
+        <div id="loadingTimer" class="text-bronze font-mono text-lg mt-3"></div>
+        <p class="text-gray-400 text-xs mt-4 italic">"Patience, like a fine patina, comes with time"</p>
+    </div>
+
+    <!-- Result view -->
+    <div id="resultView" class="hidden">
+        <div class="result-card mb-6">
+            <img id="resultImage" src="" alt="Coin result" class="w-full rounded-xl mb-6 shadow-xl">
+            <h3 id="resultTitle" class="text-2xl font-extrabold mb-3 text-bronze"></h3>
+            <div id="resultDescription" class="text-sm opacity-90 mb-4 leading-relaxed" style="white-space: pre-line;"></div>
+            <p id="resultPrice" class="text-bronze font-bold text-lg hidden"></p>
+            <div id="amazonLink" class="mt-3"></div>
+            <p id="resultAttribution" class="text-xs opacity-60 mt-4"></p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3 mb-6">
+            <button onclick="shareResult()" class="btn text-sm" style="background:#3b82f6;color:white">Share</button>
+            <button onclick="downloadResult()" class="btn text-sm" style="background:#16a34a;color:white">Save</button>
+            <button onclick="resetToHome()" class="btn btn-bronze text-sm">Again</button>
+        </div>
+
+        <!-- SpicyLister nudge -->
+        <div class="card text-center" style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); color: white;">
+            <p class="font-bold text-lg mb-2">Want to sell this coin?</p>
+            <p class="text-white/80 text-sm mb-3">SpicyLister creates eBay listings from photos. Snap, list, sell.</p>
+            <a href="https://spicylister.com" target="_blank" class="btn btn-gold w-full text-center">Try SpicyLister Free</a>
+        </div>
+
+        <!-- Sign in prompt -->
+        <div id="signInPrompt" class="card text-center border-2 border-bronze">
+            <p class="font-semibold mb-2">Join on Patreon to earn kudos, track your finds, and unlock village features!</p>
+            <p class="text-sm text-gray-500 mb-4">One login — works across every -Oid app.</p>
+            <button id="patreonSignInBtn" onclick="signInWithPatreon()" class="btn btn-bronze w-full" style="min-height:52px; font-size:1.05rem;" aria-label="Sign in with Patreon">
+                Sign in with Patreon
+            </button>
+            <div id="patreonStatus" class="hidden mt-3" role="status" aria-live="polite"></div>
+        </div>
+
+        <div id="kudosEarned" class="hidden card text-center" style="background:#fef9c3; border: 2px solid #cd7f32;">
+            <p class="text-2xl font-bold mb-2">+10 Kudos Earned!</p>
+            <p class="text-sm text-gray-600">Share your QR code to earn even more!</p>
+        </div>
+    </div>
+
+    <!-- Did You Know -->
+    <div class="card" style="background: linear-gradient(135deg, #faf5e1, #f5edd0); border: 2px solid #e5ddd0;">
+        <h3 class="font-bold mb-3">Did You Know?</h3>
+        <ul class="text-sm text-gray-700 space-y-2">
+            <li>- The 1933 UK penny is one of the rarest coins in the world &mdash; only 6 or 7 are known to exist</li>
+            <li>- Roman coins are found in Britain almost every day by metal detectorists</li>
+            <li>- A US 1794 Flowing Hair silver dollar sold for over $10 million in 2013</li>
+            <li>- The Royal Mint in Llantrisant, Wales, produces about 5 billion coins a year</li>
+        </ul>
+    </div>
+
+    <!-- Village Broadcast -->
+    <div id="broadcastSection" class="card hidden" style="background: linear-gradient(135deg, #1a0e08 0%, #2d1a0f 100%); color: #faf5e1; padding: 0; overflow: hidden;">
+        <div id="emergencyBanner" class="hidden bg-red-600 text-white text-center py-2 font-bold text-sm">EMERGENCY BROADCAST</div>
+        <div class="p-4">
+            <p class="font-bold text-sm mb-3 opacity-80" id="broadcastTitle">Village Broadcast</p>
+            <div class="relative mx-auto" style="padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; max-width: 400px;">
+                <iframe id="broadcastVideo" src="" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Villagers -->
+    <div class="card">
+        <h3 class="font-bold mb-3">Recent Arrivals</h3>
+        <div id="activityList" class="space-y-2 text-sm text-gray-600">
+            <p class="text-gray-400">Loading...</p>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!-- SECTION 2: LEARN                                              -->
+<!-- ============================================================ -->
+<div id="section-pageLearn" class="hidden">
+
+    <div class="card" style="background: linear-gradient(135deg, #2d1a0f 0%, #1a0e08 100%); color: #faf5e1; text-align: center;">
+        <div class="text-5xl mb-3">📚</div>
+        <h2 class="text-2xl font-bold mb-1">The Numismatist's Library</h2>
+        <p class="text-sm opacity-80">Knowledge Old Penny picked up over 55 years on the stalls</p>
+    </div>
+
+    <!-- Learn sub-tabs -->
+    <div class="flex gap-2 mb-4 flex-wrap">
+        <button onclick="showLearnTab('uk')" class="learn-tab active" id="learnTab-uk">🪙 UK Coins</button>
+        <button onclick="showLearnTab('world')" class="learn-tab" id="learnTab-world">🌍 World Coins</button>
+        <button onclick="showLearnTab('grading')" class="learn-tab" id="learnTab-grading">📏 Grading</button>
+    </div>
+
+    <!-- UK Coins -->
+    <div id="learnContent-uk">
+        <div class="card">
+            <h3 class="font-bold text-lg mb-3">UK Coinage &mdash; A Quick Guide</h3>
+            <div class="space-y-4 text-sm text-gray-700 leading-relaxed">
+                <div>
+                    <h4 class="font-bold text-bronze mb-1">Pre-Decimal (Before 1971)</h4>
+                    <p>12 pence = 1 shilling. 20 shillings = 1 pound. Denominations: farthing (1/4d), halfpenny (1/2d), penny (1d), threepence (3d), sixpence (6d), shilling (1/-), florin (2/-), half crown (2/6), crown (5/-). Look for Victorian, Edwardian and Georgian heads. Silver content pre-1920 is sterling (92.5%), 1920-1946 is 50% silver, after 1947 is cupro-nickel.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-bronze mb-1">Decimal (1971 onwards)</h4>
+                    <p>100 new pence = 1 pound. Denominations: 1/2p (withdrawn 1984), 1p, 2p, 5p, 10p, 20p, 50p, 1 pound, 2 pounds. Key dates: 1983 "New Pence" 2p error (should say "Two Pence"), Kew Gardens 50p (2009, mintage only 210,000), undated 20p error (2008).</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-bronze mb-1">Key Rarities</h4>
+                    <p>1933 penny (pattern only, 6-7 known). 1952 sixpence (extremely scarce). Edward VIII coins (abdication means very few minted). Any coin with a die crack, double strike, or off-centre error is worth checking &mdash; errors can be worth far more than the base coin.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-bronze mb-1">Gold Sovereigns</h4>
+                    <p>The backbone of British gold. Minted from 1817 to present. Contains 7.32g of 22ct gold. Shield reverse, St George reverse, or commemorative reverse. Key dates: 1817, 1825, 1887 Jubilee head. Even common dates are worth their gold weight plus a premium.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="background: #faf5e1; border: 2px solid #e5ddd0;">
+            <p class="font-handwritten text-xl text-center text-bronze">"If you find an old penny in the change, keep it. Not because it's valuable &mdash; but because it remembers a world that's gone."</p>
+            <p class="text-center text-sm text-gray-500 mt-2">&mdash; Old Penny</p>
+        </div>
+    </div>
+
+    <!-- World Coins -->
+    <div id="learnContent-world" class="hidden">
+        <div class="card">
+            <h3 class="font-bold text-lg mb-3">World Coins &mdash; The Big Players</h3>
+            <div class="space-y-4 text-sm text-gray-700 leading-relaxed">
+                <div>
+                    <h4 class="font-bold text-bronze mb-1">United States</h4>
+                    <p>The Morgan Dollar (1878-1921) is the most collected coin in the world. Key dates: 1893-S, 1895 (proof only), 1889-CC. Lincoln cents: 1909-S VDB, 1943 copper, 1955 double die. Mercury dimes, Walking Liberty halves, and Standing Liberty quarters are all highly sought after. US coins use the Sheldon 1-70 grading scale.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-bronze mb-1">Ancient Coins</h4>
+                    <p>Roman coins are the most accessible ancients &mdash; common bronzes from as little as a fiver. Greek coins tend to be pricier but stunning. Byzantine coins are underrated and undervalued. Always check the Treasure Act 1996 if you find ancient coins in the UK &mdash; anything over 300 years old containing more than 10% precious metal MUST be reported to the coroner within 14 days.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-bronze mb-1">Euro Zone</h4>
+                    <p>Pre-euro national coins are now collectible. French francs, German marks, Italian lire, Spanish pesetas &mdash; people hoarded them. Some Vatican and San Marino euros have tiny mintages and are worth serious money. Monaco euro coins regularly sell for 50-100 times face value.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-bronze mb-1">Bullion Coins</h4>
+                    <p>Britannias (UK), Maple Leafs (Canada), Eagles (USA), Krugerrands (South Africa), Philharmonics (Austria). These are investment coins &mdash; value tracks the gold or silver price plus a small premium. CGT-free in the UK if they're legal tender (Britannias and Sovereigns).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Grading -->
+    <div id="learnContent-grading" class="hidden">
+        <div class="card">
+            <h3 class="font-bold text-lg mb-3">Coin Grading &mdash; Condition Is King</h3>
+            <div class="space-y-4 text-sm text-gray-700 leading-relaxed">
+                <div>
+                    <h4 class="font-bold text-bronze mb-1">UK Grading Scale</h4>
+                    <p><strong>Poor (P)</strong> &mdash; Barely identifiable. <strong>Fair (Fr)</strong> &mdash; Type identifiable but very worn. <strong>Good (G)</strong> &mdash; Major features visible. <strong>Very Good (VG)</strong> &mdash; Design clear, heavy wear. <strong>Fine (F)</strong> &mdash; Moderate wear, all legends readable. <strong>Very Fine (VF)</strong> &mdash; Light wear on high points. <strong>Extremely Fine (EF)</strong> &mdash; Slight wear only. <strong>About Uncirculated (AU)</strong> &mdash; Trace wear. <strong>Uncirculated (UNC)</strong> &mdash; No wear. <strong>FDC (Fleur de Coin)</strong> &mdash; Perfect, as struck.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-bronze mb-1">Sheldon Scale (US/International)</h4>
+                    <p>Numeric 1-70. AG-3, G-4/6, VG-8/10, F-12/15, VF-20/25/30/35, EF-40/45, AU-50/53/55/58, MS-60 through MS-70 (Mint State). Professional grading services (NGC, PCGS, CGS) use this scale and encapsulate ("slab") coins with a grade. Slabbed coins sell for significantly more than raw coins of the same grade.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-bronze mb-1">What Kills Value</h4>
+                    <p><strong>CLEANING.</strong> Never clean a coin. Not with chemicals, not with a cloth, not with your thumbnail. A cleaned coin can lose 50-90% of its value. Original toning is desirable &mdash; it proves the coin hasn't been messed with. Edge knocks, scratches, tooling (re-engraving worn details), and whizzing (wire-brushing to simulate lustre) are all detectable and all destroy value.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-bronze mb-1">Old Penny's Rule</h4>
+                    <p>"Hold it by the edges. Use cotton gloves if you can. Never breathe on it, never touch the face. And for the love of all that's holy, if someone offers to 'polish it up for you' &mdash; run."</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="background: #faf5e1; border: 2px solid #e5ddd0;">
+            <h4 class="font-bold mb-2">Professional Grading Services</h4>
+            <div class="space-y-2 text-sm">
+                <p><strong>NGC</strong> (Numismatic Guaranty Company) &mdash; US-based, international standard</p>
+                <p><strong>PCGS</strong> (Professional Coin Grading Service) &mdash; US-based, gold standard for US coins</p>
+                <p><strong>CGS</strong> (Coin Grading Service) &mdash; UK-based, specialises in British coins</p>
+                <p class="text-gray-500 mt-2">Getting a coin professionally graded costs from about 15-50 quid. Worth it for anything you think might be worth over 100 pounds.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!-- SECTION 3: Q&A                                                -->
+<!-- ============================================================ -->
+<div id="section-pageQA" class="hidden">
+
+    <div class="card" style="background: linear-gradient(135deg, #2d1a0f 0%, #1a0e08 100%); color: #faf5e1; text-align: center;">
+        <div class="text-5xl mb-3">❓</div>
+        <h2 class="text-2xl font-bold mb-1">Common Questions</h2>
+        <p class="text-sm opacity-80">Things people ask Old Penny every single market day</p>
+    </div>
+
+    <div class="card" style="padding: 16px;">
+        <div class="qa-item" onclick="toggleQA(this)">
+            <div class="qa-question"><span>I found a coin in the garden &mdash; is it worth anything?</span><span>+</span></div>
+            <div class="qa-answer">Maybe! First rule: DO NOT CLEAN IT. Resist the temptation. Cleaning destroys value. Take a clear photo of both sides in natural light. Check the size (compare to a modern coin), the metal colour, and whether you can read any lettering or see a portrait. Roman coins turn up in UK gardens constantly &mdash; even common ones are a brilliant find. If it's over 300 years old and contains precious metal, you must report it under the Treasure Act 1996. Contact your local Finds Liaison Officer (FLO) through the Portable Antiquities Scheme.</div>
+        </div>
+
+        <div class="qa-item" onclick="toggleQA(this)">
+            <div class="qa-question"><span>How do I know if my coin is real or fake?</span><span>+</span></div>
+            <div class="qa-answer">Weight is your first friend. Get a precision scale (0.01g) and check the weight against published specifications. Fakes are almost always the wrong weight. Look for: seam lines around the edge (cast copies), wrong metal colour, weak fine details, a "greasy" feel. The ping test works on silver &mdash; a genuine silver coin rings like a bell when balanced on your fingertip and tapped. Chinese forgeries of expensive coins are rampant online. If it seems too good to be true, it is. For valuable coins, get them professionally authenticated by NGC, PCGS, or CGS.</div>
+        </div>
+
+        <div class="qa-item" onclick="toggleQA(this)">
+            <div class="qa-question"><span>My grandad left me a coin collection &mdash; where do I start?</span><span>+</span></div>
+            <div class="qa-answer">First &mdash; I'm sorry for your loss. Take your time. Don't rush to sell. Photograph everything as it is, don't reorganise. Check albums, envelopes, boxes, drawers &mdash; collectors hide things in odd places. Look for: gold coins (sovereigns, guineas), silver crowns, anything in capsules or slabs (professionally graded). Separate the coins roughly by era and country. Don't let anyone pressure you into a quick sale. Auction houses like Spink, Dix Noonan Webb (DNW), and Baldwin's will give free valuations. Local coin dealers can help too, but get at least two opinions.</div>
+        </div>
+
+        <div class="qa-item" onclick="toggleQA(this)">
+            <div class="qa-question"><span>Should I clean my coins?</span><span>+</span></div>
+            <div class="qa-answer">NO. Never. Not ever. Not "just a little bit." Not with vinegar, not with toothpaste, not with Brasso, not with anything. A cleaned coin loses 50-90% of its collector value. That black or brown colour is natural toning &mdash; it's proof the coin is genuine and untampered. Collectors want original surfaces. The only exception is if a coin is so encrusted with dirt that you literally cannot identify it &mdash; and even then, use only distilled water and a soft brush, very gently. Or better yet, let a professional conservator handle it.</div>
+        </div>
+
+        <div class="qa-item" onclick="toggleQA(this)">
+            <div class="qa-question"><span>Is my old penny worth anything?</span><span>+</span></div>
+            <div class="qa-answer">Most old pennies (Victoria, Edward VII, George V, George VI) are worth 50p to a few pounds in average condition. BUT &mdash; some dates are worth serious money. 1869 pennies, 1882H without the H mintmark, 1918KN and 1919KN (Kings Norton mint) can be worth 50-500 pounds depending on condition. The holy grail is the 1933 penny &mdash; only a handful exist, worth upwards of 100,000 pounds. Check the date carefully and look at the condition. Even common dates in uncirculated condition can be worth 20-50 pounds.</div>
+        </div>
+
+        <div class="qa-item" onclick="toggleQA(this)">
+            <div class="qa-question"><span>What's the Treasure Act and do I need to worry about it?</span><span>+</span></div>
+            <div class="qa-answer">If you find coins in England, Wales, or Northern Ireland (Scotland has separate law), the Treasure Act 1996 applies. You MUST report finds within 14 days to the coroner if: (1) any metallic object is at least 300 years old and contains at least 10% precious metal, (2) a group of 2+ coins from the same find are at least 300 years old, (3) a group of 10+ coins from the same find are at least 300 years old regardless of metal content. Report to your local Finds Liaison Officer. The process is not scary &mdash; they're helpful and you may get a reward equal to the market value if a museum wants to acquire it. Metal detectorists: ALWAYS report. It's the law and it's the right thing to do.</div>
+        </div>
+
+        <div class="qa-item" onclick="toggleQA(this)">
+            <div class="qa-question"><span>Where's the best place to sell coins?</span><span>+</span></div>
+            <div class="qa-answer">Depends on value. For common coins (under 50 quid): eBay is fine, just photograph well, describe accurately, and start auctions at 99p to attract bidders. For mid-range (50-500): specialist dealers or coin fairs give better prices than eBay. For high-value (500+): auction houses. Spink, DNW (Dix Noonan Webb), Baldwin's, and Morton & Eden handle the top end. They charge 15-20% buyer's premium. For bulk common coins: coin fairs or Facebook groups. Never sell gold coins to "cash for gold" shops &mdash; they'll give you scrap value, not numismatic value.</div>
+        </div>
+
+        <div class="qa-item" onclick="toggleQA(this)">
+            <div class="qa-question"><span>How should I store my coins?</span><span>+</span></div>
+            <div class="qa-answer">Never use PVC flips &mdash; they leach chemicals that damage coins over time (green slime). Use Mylar flips, acid-free cardboard holders (2x2s), or proper capsules. For albums, use ones with inert plastic pages. Store in a cool, dry place away from direct sunlight. Silica gel packets help control humidity. Handle coins by the edges only, ideally with cotton gloves. Keep valuable coins in individual capsules, ideally in an airtight box. And for anything genuinely rare: a safe or safety deposit box.</div>
+        </div>
+
+        <div class="qa-item" onclick="toggleQA(this)">
+            <div class="qa-question"><span>Are commemorative coins from the Royal Mint worth collecting?</span><span>+</span></div>
+            <div class="qa-answer">Mixed bag, honestly. The mass-produced "brilliant uncirculated" coins rarely increase in value &mdash; the mintages are too high. Proof coins with lower mintages hold value better but you're paying a premium upfront. The ones that do well are the ones with genuinely low mintages (under 10,000) or those that capture public imagination (like the Kew Gardens 50p). My advice: collect what you love, not what you think will make money. If you enjoy the designs and the history, brilliant. If you're purely investing, there are better options. Circulating commemoratives found in change are always worth keeping though &mdash; free collecting!</div>
+        </div>
+
+        <div class="qa-item" onclick="toggleQA(this)">
+            <div class="qa-question"><span>I want to start collecting &mdash; what should I begin with?</span><span>+</span></div>
+            <div class="qa-answer">Start with what interests you. If you're in the UK, try completing a set of decimal 50p designs from circulation &mdash; it costs nothing and gets you hooked. Or pick a monarch and try to get one of each denomination. Pre-decimal pennies make a great starter collection &mdash; they're big, beautiful, affordable, and span from Victoria to Elizabeth II. Get yourself a decent reference book (Spink's Coins of England is the bible), a magnifying glass, and maybe a precision scale. Join a local coin club if there is one. Go to coin fairs &mdash; the dealers are usually happy to chat and help beginners. And remember: it's not about how much you spend, it's about how much you learn.</div>
+        </div>
+    </div>
+
+    <!-- Recommended gear from Q&A -->
+    <div class="card">
+        <h3 class="font-bold mb-3">Old Penny's Starter Kit</h3>
+        <p class="text-sm text-gray-600 mb-4">Gear I actually use and recommend (affiliate links support the village):</p>
+        <div class="flex flex-wrap gap-2">
+            <a href="https://www.amazon.co.uk/s?k=coin+album+collection&tag=chrisptee-21" target="_blank" class="amazon-btn text-sm">Coin Albums</a>
+            <a href="https://www.amazon.co.uk/s?k=jewellers+loupe+magnifier&tag=chrisptee-21" target="_blank" class="amazon-btn text-sm">Magnifier Loupe</a>
+            <a href="https://www.amazon.co.uk/s?k=spink+coins+of+england&tag=chrisptee-21" target="_blank" class="amazon-btn text-sm">Spink Reference Book</a>
+            <a href="https://www.amazon.co.uk/s?k=precision+scale+0.01g&tag=chrisptee-21" target="_blank" class="amazon-btn text-sm">Precision Scale</a>
+        </div>
+    </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!-- SECTION 4: CHATBOT — ASK OLD PENNY                           -->
+<!-- ============================================================ -->
+<div id="section-pagePenny" class="hidden">
+
+    <div class="card" style="background: linear-gradient(135deg, #2d1a0f 0%, #1a0e08 100%); color: #faf5e1; text-align: center;">
+        <div class="text-5xl mb-3">💬</div>
+        <h2 class="text-2xl font-bold mb-1">Ask Old Penny</h2>
+        <p class="text-sm opacity-80">68 years old. 55 years on the stalls. Zero tolerance for polished coins.</p>
+        <p class="text-xs opacity-60 mt-1">Portobello Road market since 1970.</p>
+    </div>
+
+    <!-- Quick Questions -->
+    <div class="card">
+        <p class="text-sm font-semibold text-gray-600 mb-3">Quick asks:</p>
+        <div class="flex flex-wrap gap-2">
+            <button onclick="askPennyQuick('I found an old coin - how do I identify it?')" class="text-xs px-3 py-2 bg-amber-50 border border-amber-200 rounded-full text-amber-700 font-semibold hover:bg-amber-100 transition min-h-[40px]">Found a coin?</button>
+            <button onclick="askPennyQuick('How do I know if my coin is a fake?')" class="text-xs px-3 py-2 bg-red-50 border border-red-200 rounded-full text-red-700 font-semibold hover:bg-red-100 transition">Spot fakes?</button>
+            <button onclick="askPennyQuick('What is the Sheldon grading scale?')" class="text-xs px-3 py-2 bg-blue-50 border border-blue-200 rounded-full text-blue-700 font-semibold hover:bg-blue-100 transition">Grading scale?</button>
+            <button onclick="askPennyQuick('What coins should I look for in my change?')" class="text-xs px-3 py-2 bg-green-50 border border-green-200 rounded-full text-green-700 font-semibold hover:bg-green-100 transition">Change finds?</button>
+            <button onclick="askPennyQuick('How much is a sovereign worth?')" class="text-xs px-3 py-2 bg-yellow-50 border border-yellow-200 rounded-full text-yellow-700 font-semibold hover:bg-yellow-100 transition">Sovereign value?</button>
+            <button onclick="askPennyQuick('What is the Treasure Act 1996?')" class="text-xs px-3 py-2 bg-purple-50 border border-purple-200 rounded-full text-purple-700 font-semibold hover:bg-purple-100 transition">Treasure Act?</button>
+        </div>
+    </div>
+
+    <!-- Chat Window -->
+    <div class="card" style="padding: 16px;">
+        <div id="chatMessages" class="chat-container" style="min-height: 200px; padding: 8px;">
+            <div class="flex items-start gap-2 mb-3">
+                <span class="text-2xl flex-shrink-0">🪙</span>
+                <div class="chat-bubble chat-penny">
+                    Alright! I'm Old Penny &mdash; been on the coin stalls since I was 12, helping me old dad on Portobello Road. Whether you've found a coin in the garden, inherited a collection, or just want to know what that thing in your change jar is &mdash; bring it over. Every coin tells a story. Most people just see the price. Let's find the story.
+                </div>
+            </div>
+        </div>
+        <div class="flex gap-2 mt-3">
+            <input type="text" id="pennyInput" placeholder="Ask Old Penny anything about coins..."
+                class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-bronze focus:outline-none text-sm" style="min-height:48px; border-color: #e5ddd0;"
+                onkeydown="if(event.key==='Enter')askPenny()">
+            <button onclick="askPenny()" class="btn btn-bronze px-6" style="min-height: 48px;">Send</button>
+        </div>
+        <p class="text-xs text-gray-400 mt-2 text-center">Old Penny is AI-powered. Not a professional valuation. Always get valuable coins authenticated.</p>
+    </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!-- SECTION 5: GEAR                                               -->
+<!-- ============================================================ -->
+<div id="section-pageGear" class="hidden">
+
+    <div class="card" style="background: linear-gradient(135deg, #2d1a0f 0%, #1a0e08 100%); color: #faf5e1; text-align: center;">
+        <div class="text-5xl mb-3">🔧</div>
+        <h2 class="text-2xl font-bold mb-1">The Collector's Kit</h2>
+        <p class="text-sm opacity-80">Gear Old Penny uses and trusts. Affiliate links support the village.</p>
+    </div>
+
+    <!-- Storage & Albums -->
+    <div class="card">
+        <h3 class="font-bold mb-3">Storage & Albums</h3>
+        <p class="text-sm text-gray-600 mb-4">Proper storage is the difference between a coin holding value and losing it.</p>
+        <div class="space-y-3">
+            <a href="https://www.amazon.co.uk/s?k=coin+album+collection+holder&tag=chrisptee-21" target="_blank" class="amazon-btn block text-center">Coin Albums & Holders</a>
+            <a href="https://www.amazon.co.uk/s?k=coin+capsules+storage&tag=chrisptee-21" target="_blank" class="amazon-btn block text-center">Coin Capsules</a>
+            <a href="https://www.amazon.co.uk/s?k=mylar+coin+flips&tag=chrisptee-21" target="_blank" class="amazon-btn block text-center">Mylar Flips (NOT PVC)</a>
+            <a href="https://www.amazon.co.uk/s?k=coin+storage+box&tag=chrisptee-21" target="_blank" class="amazon-btn block text-center">Storage Boxes</a>
+        </div>
+    </div>
+
+    <!-- Tools -->
+    <div class="card">
+        <h3 class="font-bold mb-3">Tools of the Trade</h3>
+        <div class="space-y-3">
+            <a href="https://www.amazon.co.uk/s?k=jewellers+loupe+30x+magnifier&tag=chrisptee-21" target="_blank" class="amazon-btn block text-center">Jeweller's Loupe (30x)</a>
+            <a href="https://www.amazon.co.uk/s?k=precision+digital+scale+0.01g+coins&tag=chrisptee-21" target="_blank" class="amazon-btn block text-center">Precision Scale (0.01g)</a>
+            <a href="https://www.amazon.co.uk/s?k=UV+light+torch+counterfeit+detection&tag=chrisptee-21" target="_blank" class="amazon-btn block text-center">UV Light (Fake Detection)</a>
+            <a href="https://www.amazon.co.uk/s?k=digital+caliper+coin+measuring&tag=chrisptee-21" target="_blank" class="amazon-btn block text-center">Digital Caliper</a>
+            <a href="https://www.amazon.co.uk/s?k=cotton+gloves+coin+handling&tag=chrisptee-21" target="_blank" class="amazon-btn block text-center">Cotton Handling Gloves</a>
+        </div>
+    </div>
+
+    <!-- Reference Books -->
+    <div class="card">
+        <h3 class="font-bold mb-3">Reference Books</h3>
+        <p class="text-sm text-gray-600 mb-4">The books Old Penny keeps behind the stall, well-thumbed and indispensable.</p>
+        <div class="space-y-3">
+            <a href="https://www.amazon.co.uk/s?k=spink+coins+of+england&tag=chrisptee-21" target="_blank" class="amazon-btn block text-center">Spink's Coins of England (The Bible)</a>
+            <a href="https://www.amazon.co.uk/s?k=collectors+coins+great+britain&tag=chrisptee-21" target="_blank" class="amazon-btn block text-center">Collectors' Coins Great Britain</a>
+            <a href="https://www.amazon.co.uk/s?k=roman+coins+and+their+values&tag=chrisptee-21" target="_blank" class="amazon-btn block text-center">Roman Coins & Their Values</a>
+            <a href="https://www.amazon.co.uk/s?k=coin+yearbook&tag=chrisptee-21" target="_blank" class="amazon-btn block text-center">Coin Yearbook</a>
+        </div>
+    </div>
+
+    <!-- Support the Village -->
+    <div class="card" style="background: linear-gradient(135deg, #f5f0e8, #fffef9); border: 2px solid #cd7f32;">
+        <h3 class="text-xl font-bold mb-2 text-center" style="color:#5c3d1e;">Join the Village</h3>
+        <p class="text-sm mb-5 text-center" style="color:#7a5230;">Everything here is free to use. Supporting the village keeps it growing.</p>
+        <div class="space-y-3 mb-4">
+            <div class="p-4 rounded-xl border" style="background:#fff8f0;border-color:#cd7f32;">
+                <p class="font-bold mb-1" style="color:#5c3d1e;">🏡 Villager — £3/month</p>
+                <ul class="text-sm space-y-1" style="color:#7a5230;">
+                    <li>✓ Your hut in the village</li>
+                    <li>✓ Kudos &amp; leaderboard</li>
+                    <li>✓ Recognised across all -Oids</li>
+                </ul>
+                <p class="text-xs mt-2" style="color:#b8956a;">Cancel anytime.</p>
+            </div>
+            <div class="p-4 rounded-xl border-2" style="background:#fff8f0;border-color:#b8860b;">
+                <p class="font-bold mb-1" style="color:#5c3d1e;">⭐ Elder — £7/month</p>
+                <ul class="text-sm space-y-1" style="color:#7a5230;">
+                    <li>✓ Everything in Villager</li>
+                    <li>✓ Mini hamlet — your own page</li>
+                    <li>✓ Named in the village roll</li>
+                </ul>
+                <p class="text-xs mt-2" style="color:#b8956a;">Cancel anytime.</p>
+            </div>
+            <div class="p-4 rounded-xl border-2" style="background:#fff8f0;border-color:#8b6914;">
+                <p class="font-bold mb-1" style="color:#5c3d1e;">👑 Founder — £15/month <span class="text-xs px-2 py-0.5 rounded ml-1" style="background:#cd7f32;color:white;">Best Value</span></p>
+                <ul class="text-sm space-y-1" style="color:#7a5230;">
+                    <li>✓ Full hamlet suite</li>
+                    <li>✓ Direct line to Chris</li>
+                    <li>✓ Early access to new -Oids</li>
+                    <li>✓ 300 kudos on joining</li>
+                </ul>
+                <p class="text-xs mt-2" style="color:#b8956a;">Cancel anytime.</p>
+            </div>
+        </div>
+        <a href="https://www.patreon.com/chrisptee" target="_blank" class="btn btn-bronze w-full text-center mb-1" style="font-size:1rem;min-height:48px;">Join on Patreon</a>
+        <p class="text-xs text-center mb-4" style="color:#b8956a;">Cancel anytime. Your price locks in while you stay.</p>
+        <div class="p-4 rounded-xl text-center" style="background:#fffbf2;border:1px solid #cd7f3244;">
+            <p class="font-bold text-sm mb-1" style="color:#8b6914;">🤝 Invite a friend</p>
+            <p class="text-sm mb-3" style="color:#7a5230;">Earn 50 kudos for every person who joins through your link.</p>
+            <button onclick="copyInviteLink()" class="btn btn-bronze w-full" style="font-size:0.9rem;min-height:44px;">Copy your invite link</button>
+            <p class="text-xs text-center mt-2 hidden" id="inviteCopied" style="color:#8b6914;">Copied! ✓</p>
+        </div>
+    </div>
+
+    <!-- Noisy Brain -->
+    <div class="noisy-brain">
+        <h3 class="text-xl font-bold mb-3">Noisy Brain?</h3>
+        <p class="text-sm text-white/90 mb-3">If your head's too loud, your thoughts won't queue up, or you're wondering why everyone else seems to cope and you don't &mdash; you might be neurodivergent. AuDHD. ADHD. Autistic. Dyslexic. Something with a long name that just means your brain works differently.</p>
+        <p class="text-sm text-white/90 mb-3">You're not broken. You're not lazy. You might just need the right support.</p>
+        <p class="text-sm text-white/90">The person who built this village was diagnosed at 55. Late-diagnosed, self-taught, and now building infrastructure for others like him. If any of this resonates, reach out. <a href="https://wa.me/447976884254" class="underline text-yellow-300">WhatsApp is always open.</a></p>
+        <p class="text-xs text-white/60 mt-3">If you're in crisis: Samaritans 116 123 (UK, free, 24/7)</p>
+    </div>
+
+    <!-- The Code -->
+    <div class="card" style="background: linear-gradient(135deg, #1a0e08 0%, #2d1a0f 100%); color: #faf5e1;">
+        <h3 class="text-xl font-bold mb-4">The Village Code</h3>
+        <div class="space-y-3 text-sm">
+            <p><strong>All Welcome, Be Kind.</strong> From seasoned numismatists to kids who found a coin in the garden. Everyone learning together.</p>
+            <p><strong>Honesty First.</strong> About grades, about values, about fakes. If it's worth tuppence, we say tuppence.</p>
+            <p><strong>Protect the Heritage.</strong> Report finds. Respect the Treasure Act. Don't clean the history off a coin.</p>
+            <p><strong>Teach, Don't Gatekeep.</strong> Knowledge shared is knowledge multiplied. Old Penny learned from his dad. Pass it on.</p>
+            <p><strong>Revenue Circulates, Not Extracts.</strong> Coffeeware model. Free forever. Donations optional.</p>
+        </div>
+        <p class="text-xs opacity-60 mt-4">"World domination through kindness. One ember at a time."</p>
+    </div>
+</div>
+
+
+<!-- ============================================================ -->
+<!-- SECTION 6: MEET — what3words Meeting Point Generator          -->
+<!-- ============================================================ -->
+<div id="section-pageMeet" class="hidden">
+
+    <div class="card" style="background: linear-gradient(135deg, #2d1a0f 0%, #1a0e08 100%); color: #faf5e1;">
+        <div class="text-5xl mb-3 text-center">📍</div>
+        <h2 class="text-2xl font-bold mb-2 text-center" style="color: #cd7f32;">Meeting Point Generator</h2>
+        <p class="text-sm opacity-80 text-center">At a coin fair? Tell people exactly where you are — in three words. Share your table, your van, the entrance. Dead simple, dead precise.</p>
+    </div>
+
+    <!-- Location use cases -->
+    <div class="card">
+        <h3 class="font-bold mb-4 text-center">What are you pinning?</h3>
+        <div class="grid grid-cols-2 gap-3">
+            <button onclick="meetGetLocation('🪙 My Tray')" class="btn btn-bronze w-full" style="min-height:56px; font-size:1rem;" aria-label="Pin my coin tray location">🪙 My Tray</button>
+            <button onclick="meetGetLocation('🏛️ The Coin Table')" class="btn btn-dark w-full" style="min-height:56px; font-size:1rem;" aria-label="Pin the coin table location">🏛️ The Coin Table</button>
+            <button onclick="meetGetLocation('🚗 My Car')" class="btn btn-outline w-full" style="min-height:56px; font-size:1rem;" aria-label="Pin my car location">🚗 My Car</button>
+            <button onclick="meetGetLocation('🏪 This Fair')" class="btn btn-outline w-full" style="min-height:56px; font-size:1rem;" aria-label="Pin this fair location">🏪 This Fair</button>
+        </div>
+    </div>
+
+    <!-- Location display -->
+    <div id="meetLocationCard" class="card hidden" style="background: linear-gradient(135deg, #2d1a0f 0%, #1a0e08 100%); color: #faf5e1;">
+        <p class="text-sm mb-1 font-semibold" style="color: #cd7f32;" id="meetLabelDisplay">Your location:</p>
+        <p class="text-sm opacity-70 mb-2 font-semibold" id="meetCoordsDisplay"></p>
+        <p class="text-4xl font-extrabold mb-3 tracking-wide" id="meetW3W" aria-live="polite" style="color: #cd7f32;">—</p>
+        <a id="meetMapLink" href="#" target="_blank" rel="noopener" style="color: #cd7f32; font-weight: 700;" aria-label="Open on what3words map">Open on what3words map ↗</a>
+        <div class="flex gap-3 mt-4">
+            <button onclick="meetCopy()" class="btn btn-bronze flex-1" style="min-height:48px;" aria-label="Copy what3words address">Copy</button>
+            <button onclick="meetShare()" class="btn btn-dark flex-1" style="min-height:48px;" aria-label="Share what3words address">Share</button>
+        </div>
+    </div>
+
+    <!-- QR Code -->
+    <div id="meetQrCard" class="card hidden text-center">
+        <h3 class="font-bold mb-3">Share via QR</h3>
+        <canvas id="meetQrCanvas" class="mx-auto rounded-xl shadow-lg" style="max-width:220px;"></canvas>
+        <div class="flex gap-3 mt-4">
+            <button onclick="meetGenerateQR()" class="btn btn-bronze flex-1" style="min-height:48px;" aria-label="Generate QR code">Generate QR</button>
+            <button onclick="meetDownloadQR()" class="btn btn-dark flex-1" style="min-height:48px;" aria-label="Download QR code">Download</button>
+        </div>
+    </div>
+
+    <!-- Manual input -->
+    <div class="card">
+        <h3 class="font-bold mb-3">Or type a what3words address</h3>
+        <div class="relative">
+            <input type="text" id="meetManualInput" placeholder="e.g. filled.count.soap"
+                oninput="meetAutoSuggest(this.value)"
+                class="w-full px-4 py-3 border-2 rounded-xl focus:outline-none"
+                style="border-color: #cd7f32; min-height: 48px; font-size: 1rem;"
+                aria-label="Enter a what3words address — three words separated by dots"
+                autocomplete="off" spellcheck="false">
+            <div id="meetSuggestList" class="hidden absolute z-50 w-full bg-white border-2 rounded-xl shadow-xl mt-1" style="border-color: #cd7f32;"></div>
+        </div>
+        <button onclick="meetLookup()" class="btn btn-bronze w-full mt-3" style="min-height:56px; font-size:1.05rem;" aria-label="Look up this what3words address">
+            Look Up Address
+        </button>
+        <p id="meetManualStatus" class="hidden text-sm mt-2 text-center font-semibold" role="status" aria-live="polite"></p>
+    </div>
+
+    <!-- Footer credit -->
+    <div class="card text-center" style="background: #f5edd0;">
+        <p class="text-sm opacity-70">Powered by <a href="https://what3words.com" target="_blank" rel="noopener" style="color: #cd7f32; font-weight: 700;" aria-label="what3words website">what3words</a> — every 3m² on Earth has a unique 3-word address.</p>
+    </div>
+
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 7: VILLAGE & JOIN                                     -->
+<!-- ============================================================ -->
+<div id="section-pageVillage" class="hidden">
+
+    <div class="card" style="background: linear-gradient(135deg, #2d1a0f 0%, #1a0e08 100%); color: #faf5e1; text-align: center;">
+        <div class="text-5xl mb-3">🏘️</div>
+        <h2 class="text-2xl font-bold mb-1">The -Oid Villages</h2>
+        <p class="text-sm opacity-80">Same AI brain, different expert heads. Each village has its own community.</p>
+    </div>
+
+    <!-- Cross-family grid -->
+    <div class="card">
+        <h3 class="font-bold mb-4">Explore the Family</h3>
+        <div class="flex flex-wrap gap-2 justify-center">
+            <a href="https://magic-oid.co.uk" class="oid-pill bg-purple-100 text-purple-800">🎩 Magic-Oid</a>
+            <a href="https://radi-oid.co.uk" class="oid-pill bg-orange-100 text-orange-800">📻 Radi-Oid</a>
+            <a href="https://sail-oid.co.uk" class="oid-pill bg-blue-100 text-blue-800">⛵ Sail-Oid</a>
+            <a href="https://guit-oid.co.uk" class="oid-pill bg-amber-100 text-amber-800">🎸 Guit-Oid</a>
+            <a href="https://vinyl-oid.co.uk" class="oid-pill bg-purple-100 text-purple-800">💿 Vinyl-Oid</a>
+            <span class="oid-pill font-bold" style="background: #cd7f32; color: #1a0e08;">🪙 Coin-Oid &mdash; You're Here!</span>
+            <a href="https://watch-oid.co.uk" class="oid-pill bg-cyan-100 text-cyan-800">&#8986; Watch-Oid</a>
+            <a href="https://camera-oid.co.uk" class="oid-pill bg-orange-100 text-orange-800">📷 Camera-Oid</a>
+            <a href="https://stamp-oid.co.uk" class="oid-pill bg-rose-100 text-rose-800">📮 Stamp-Oid</a>
+            <a href="https://cannabin-oid.co.uk" class="oid-pill bg-green-100 text-green-800">🌿 Cannabin-Oid</a>
+            <a href="https://fish-oid.co.uk" class="oid-pill bg-teal-100 text-teal-800">🐟 Fish-Oid</a>
+            <a href="https://designer-oid.co.uk" class="oid-pill bg-rose-100 text-rose-800">👗 Designer-Oid</a>
+            <a href="https://miniature-oid.co.uk" class="oid-pill bg-indigo-100 text-indigo-800">🔍 Miniature-Oid</a>
+            <a href="https://spicylister.com" class="oid-pill bg-red-100 text-red-800">🌶️ SpicyLister</a>
+        </div>
+    </div>
+
+    <!-- Hamlet CTA -->
+    <div class="card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none;">
+        <div class="text-center text-white">
+            <div class="text-4xl mb-2">🏘️</div>
+            <h3 class="text-xl font-bold mb-2">Run Your Own Coin-Oid Village</h3>
+            <p class="text-sm opacity-90 mb-4">Got a stall, a shop, or numismatic expertise worth sharing? Get your own hamlet — your page, your QR code, your corner of the village.</p>
+            <a href="https://magic-oid.co.uk/hamlet/signup" class="btn w-full" style="background:white;color:#92400e;font-weight:700;" aria-label="Claim your hamlet in the Coin-Oid village">Claim Your Hamlet</a>
+        </div>
+    </div>
+
+    <!-- Join tiers -->
+    <div class="card">
+        <h3 class="font-bold text-lg mb-2 text-center">Join the Village</h3>
+        <p class="text-sm text-gray-500 text-center mb-4">Everything here is free to use. Supporting the village keeps it growing.</p>
+        <div class="space-y-3">
+            <div class="border-2 border-gray-200 rounded-2xl p-5">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="font-bold">🏡 Villager</h4>
+                    <span class="font-bold text-bronze">£3/month</span>
+                </div>
+                <ul class="text-sm text-gray-600 space-y-1 mb-2">
+                    <li>✓ Your hut in the village</li>
+                    <li>✓ Kudos &amp; leaderboard</li>
+                    <li>✓ Village activity feed</li>
+                    <li>✓ Recognised across all -Oids</li>
+                </ul>
+                <p class="text-xs text-gray-400">Cancel anytime.</p>
+            </div>
+            <div class="border-2 border-bronze rounded-2xl p-5" style="background: linear-gradient(135deg, #faf5e1, #f5edd0);">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="font-bold">⭐ Elder</h4>
+                    <span class="font-bold text-bronze">£7/month</span>
+                </div>
+                <ul class="text-sm text-gray-600 space-y-1 mb-2">
+                    <li>✓ Everything in Villager</li>
+                    <li>✓ Mini hamlet — your own page</li>
+                    <li>✓ Named in the village roll</li>
+                    <li>✓ Elder badge site-wide</li>
+                </ul>
+                <p class="text-xs text-gray-400">Cancel anytime.</p>
+            </div>
+            <div class="border-2 rounded-2xl p-5" style="border-color:#8b6914;background:linear-gradient(135deg,#faf5e1,#f5e9c0);">
+                <div class="flex justify-between items-center mb-1">
+                    <h4 class="font-bold">👑 Founder</h4>
+                    <span class="font-bold" style="color:#8b6914;">£15/month</span>
+                </div>
+                <p class="text-xs font-bold mb-2" style="color:#8b6914;">Best Value</p>
+                <ul class="text-sm text-gray-600 space-y-1 mb-2">
+                    <li>✓ Full hamlet suite</li>
+                    <li>✓ Direct line to Chris</li>
+                    <li>✓ Early access to new -Oids</li>
+                    <li>✓ 300 kudos on joining</li>
+                </ul>
+                <p class="text-xs text-gray-400">Cancel anytime.</p>
+            </div>
+        </div>
+        <a href="https://www.patreon.com/chrisptee" target="_blank" class="btn btn-bronze w-full text-center mt-4 mb-1" aria-label="Join on Patreon">Join on Patreon</a>
+        <p class="text-xs text-gray-400 text-center">Cancel anytime. Your price locks in while you stay.</p>
+    </div>
+
+    <!-- Patreon sign in -->
+    <div id="villageSignIn" class="card text-center border-2 border-bronze">
+        <h3 class="font-bold mb-3">Join the Village</h3>
+        <p class="text-sm text-gray-600 mb-4">Sign in with Patreon to earn kudos, track finds, and unlock community features. One login works across every -Oid app.</p>
+        <button onclick="signInWithPatreon()" class="btn btn-bronze w-full" style="min-height:52px; font-size:1.05rem;" aria-label="Sign in with Patreon">Sign in with Patreon</button>
+        <p class="text-xs text-gray-500 mt-3">Secure OAuth. No passwords stored here.</p>
+    </div>
+
+    <!-- The Family -->
+    <div class="card">
+        <h3 class="font-bold mb-4 text-center">The FeelFamous Family</h3>
+        <div class="flex flex-wrap gap-3 justify-center text-sm">
+            <a href="https://comedymagic.co.uk" class="text-gray-600 hover:text-bronze transition">Comedy Magic</a>
+            <span class="text-gray-300">|</span>
+            <a href="https://docstrange.co.uk" class="text-gray-600 hover:text-bronze transition">Doc Strange</a>
+            <span class="text-gray-300">|</span>
+            <a href="https://chrisptee.co.uk" class="text-gray-600 hover:text-bronze transition">Chris P Tee</a>
+            <span class="text-gray-300">|</span>
+            <a href="https://feelfamous.co.uk" class="text-gray-600 hover:text-bronze transition">FeelFamous</a>
+            <span class="text-gray-300">|</span>
+            <a href="https://strangemole.co.uk" class="text-gray-600 hover:text-bronze transition">Strange Mole</a>
+            <span class="text-gray-300">|</span>
+            <a href="https://jackmingus.co.uk" class="text-gray-600 hover:text-bronze transition">Jack Mingus</a>
+        </div>
+    </div>
+
+    <!-- Leaderboard -->
+    <div class="card">
+        <h3 class="font-bold mb-4 text-center">Kudos Leaderboard</h3>
+        <div id="leaderboardList" class="space-y-3">
+            <p class="text-center text-gray-400 text-sm">Loading...</p>
+        </div>
+    </div>
+
+    <!-- QR Code -->
+    <div id="qrSection" class="hidden card text-center">
+        <h3 class="font-bold mb-3">Your Referral QR Code</h3>
+        <img id="qrImage" src="" alt="QR Code" class="w-48 h-48 mx-auto mb-3 rounded-xl shadow-lg">
+        <p class="text-sm text-gray-600 mb-2">Share this to earn <strong>50 kudos</strong> per signup!</p>
+        <button onclick="downloadQR()" class="btn btn-bronze">Download QR Code</button>
+    </div>
+</div>
+
+</main>
+
+<!-- ==================== FOOTER ==================== -->
+<footer style="background: #1a0e08; color: #faf5e1;" class="py-10 px-4">
+    <div class="max-w-2xl mx-auto text-center">
+        <h3 class="text-lg font-bold text-bronze mb-3">WE ALL STAND ON THE SHOULDERS OF GIANTS</h3>
+        <p class="text-sm opacity-70 mb-6">Benedetto Pistrucci &mdash; Augustus Saint-Gaudens &mdash; George T. Morgan &mdash; Victor D. Brenner &mdash; William Wyon &mdash; Thomas Simon &mdash; Philip Nathan</p>
+
+        <p class="font-handwritten text-2xl text-bronze mb-6">"World domination through kindness. One ember at a time."</p>
+
+        <div class="flex flex-wrap gap-4 justify-center mb-6">
+            <a href="https://www.patreon.com/chrisptee" target="_blank" class="text-bronze hover:text-copper text-sm transition">Patreon</a>
+            <a href="https://wa.me/447976884254" class="text-bronze hover:text-copper text-sm transition">WhatsApp</a>
+            <a href="https://feelfamous.co.uk" class="text-bronze hover:text-copper text-sm transition">FeelFamous</a>
+        </div>
+
+        <p class="text-xs opacity-50 mb-2">
+            Built by <a href="https://chrisptee.co.uk" class="text-bronze hover:text-copper">Chris P Tee</a> &mdash;
+            Part of <a href="https://feelfamous.co.uk" class="text-bronze hover:text-copper">FeelFamous</a>
+        </p>
+        <p class="text-xs opacity-40 mb-2">
+            Crafted by the Chris P Trinity. We are the Board. We are the fire. We are one.
+        </p>
+        <p class="text-xs opacity-30">
+            Safe space for skill-sharing across generations. Adults site, kids welcome with parent permission.
+        </p>
+    </div>
+</footer>
+
+<canvas id="resultCanvas" class="hidden"></canvas>
+
+<!-- ==================== JAVASCRIPT ==================== -->
+<script>
+// ===== CONFIGURATION =====
+const CONFIG = {
+    oidName: 'Coin-Oid',
+    oidSlug: 'coin',
+    primaryColor: '#cd7f32',
+    loadingIcon: '🪙',
+    supabaseUrl: 'https://pdnjeynugptnavkdbmxh.supabase.co',
+    supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkbmpleW51Z3B0bmF2a2RibXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMTEzMDAsImV4cCI6MjA4NDU4NzMwMH0.GawisR01EykMtdauBMxenmHF2NXDMzDOJl8WgzkwFQo',
+    amazonTag: 'chrisptee-21',
+    adminEmails: ['chris@chrisptee.co.uk', 'chris@chrisptee.com', 'glowgadgets@gmail.com']
+};
+
+// ===== PATREON AUTH =====
+const PATREON_CLIENT_ID = 'A-K7cVCZBl7mQZDlrq0obIq7Jm0RPYAMGstfBsUyEeX-5e6WvU24ZWMTGBuypxot';
+const PATREON_OAUTH_URL = `https://www.patreon.com/oauth2/authorize?response_type=code&client_id=${PATREON_CLIENT_ID}&redirect_uri=https://coin-oid.co.uk/auth/patreon&scope=identity%20identity.memberships`;
+
+// ===== w3w =====
+const W3W_API_KEY = 'R7VL7Q93';
+let patreonSession = null;
+let meetCurrentW3W = '';
+let meetCurrentLabel = '';
+let meetAutoSuggestTimer = null;
+
+// ===== SUPABASE =====
+const { createClient } = supabase;
+const supabaseClient = createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+
+let currentUser = null;
+let currentResult = null;
+let userQRCode = null;
+let currentMode = 'identify';
+let chatHistory = [];
+let loadingTimerInterval = null;
+let loadingStartTime = null;
+let messageRotationInterval = null;
+
+const patienceMessages = [
+    "Examining the mint marks...",
+    "Checking for wear patterns...",
+    "Analyzing the strike quality...",
+    "Cross-referencing numismatic guides...",
+    "Inspecting the luster and toning...",
+    "Evaluating the coin's grade...",
+    "Searching historical mint records...",
+    "Comparing with known varieties...",
+    "Detecting any die cracks or errors...",
+    "Assessing the rim and edge lettering...",
+    "Reviewing authentication markers...",
+    "Calculating estimated value range...",
+    "Checking the weight against specifications...",
+    "Old Penny's putting his glasses on...",
+    "Flipping the coin to check the reverse...",
+    "Consulting the Spink catalogue..."
+];
+
+// ===== INIT =====
+window.onload = async function() {
+    // UI first — always safe
+    checkAgeVerification();
+    initSectionReveal();
+    loadBroadcast();
+
+    // Patreon callback + session restore
+    restorePatreonSession();
+    if (window.location.search.includes('code=') && window.location.pathname.includes('/auth/patreon')) {
+        await handlePatreonCallback();
+    }
+
+    // Supabase auth — wrapped so a Supabase hiccup never breaks the page
+    try {
+        await checkUser();
+        await loadRecentActivity();
+    } catch (e) {
+        console.warn('Supabase init skipped:', e);
+    }
+};
+
+// ===== SECTION NAVIGATION =====
+function showSection(sectionId) {
+    // Hide all sections
+    document.querySelectorAll('[id^="section-"]').forEach(s => s.classList.add('hidden'));
+    // Show target
+    const target = document.getElementById('section-' + sectionId);
+    if (target) target.classList.remove('hidden');
+
+    // Update tabs
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    const tab = document.getElementById('tab-' + sectionId);
+    if (tab) tab.classList.add('active');
+
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Load leaderboard if village
+    if (sectionId === 'pageVillage') loadLeaderboard();
+}
+
+// ===== SECTION REVEAL (intersection observer) =====
+function initSectionReveal() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) entry.target.classList.add('visible');
+        });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.section-fade').forEach(el => observer.observe(el));
+}
+
+// ===== LEARN TABS =====
+function showLearnTab(tab) {
+    ['uk', 'world', 'grading'].forEach(t => {
+        const content = document.getElementById('learnContent-' + t);
+        const btn = document.getElementById('learnTab-' + t);
+        if (content) content.classList.add('hidden');
+        if (btn) btn.classList.remove('active');
+    });
+    const target = document.getElementById('learnContent-' + tab);
+    const targetBtn = document.getElementById('learnTab-' + tab);
+    if (target) target.classList.remove('hidden');
+    if (targetBtn) targetBtn.classList.add('active');
+}
+
+// ===== Q&A ACCORDION =====
+function toggleQA(item) {
+    const answer = item.querySelector('.qa-answer');
+    const indicator = item.querySelector('.qa-question span:last-child');
+    const isOpen = answer.classList.contains('open');
+
+    // Close all
+    document.querySelectorAll('.qa-answer').forEach(a => a.classList.remove('open'));
+    document.querySelectorAll('.qa-question span:last-child').forEach(s => s.textContent = '+');
+
+    if (!isOpen) {
+        answer.classList.add('open');
+        indicator.textContent = '−';
+    }
+}
+
+// ===== MODE TOGGLE =====
+function setMode(mode) {
+    currentMode = mode;
+    const identifyBtn = document.getElementById('modeIdentify');
+    const roastBtn = document.getElementById('modeRoast');
+    const title = document.getElementById('oracleTitle');
+    const subtitle = document.getElementById('oracleSubtitle');
+
+    if (mode === 'identify') {
+        identifyBtn.className = 'flex-1 btn btn-bronze text-sm';
+        roastBtn.className = 'flex-1 btn btn-outline text-sm';
+        title.textContent = 'Snap It. Know It. Value It.';
+        subtitle.textContent = 'Upload a photo of any coin, token, medal or banknote';
+    } else {
+        identifyBtn.className = 'flex-1 btn btn-outline text-sm';
+        roastBtn.className = 'flex-1 btn btn-bronze text-sm';
+        title.textContent = 'Roast My Coins';
+        subtitle.textContent = 'Show us your collection and prepare for brutal honesty';
+    }
+}
+
+// ===== AGE VERIFICATION =====
+function checkAgeVerification() {
+    if (!localStorage.getItem('ageVerified')) {
+        document.getElementById('ageModal').classList.remove('hidden');
+    }
+}
+
+function confirmAge(type) {
+    localStorage.setItem('ageVerified', type);
+    localStorage.setItem('ageVerifiedDate', new Date().toISOString());
+    document.getElementById('ageModal').classList.add('hidden');
+    if (type === 'under18') {
+        alert('Please ask your parent or guardian to sign up with you. They can create an account and add you as a supervised user.');
+    }
+}
+
+// ===== BROADCAST =====
+function getYouTubeEmbedUrl(url) {
+    if (!url) return '';
+    let videoId = '';
+    if (url.includes('youtube.com/shorts/')) videoId = url.split('youtube.com/shorts/')[1].split('?')[0];
+    else if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1].split('?')[0];
+    else if (url.includes('youtube.com/watch')) videoId = new URLSearchParams(url.split('?')[1]).get('v');
+    else if (url.includes('youtube.com/embed/')) videoId = url.split('youtube.com/embed/')[1].split('?')[0];
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : url;
+}
+
+async function loadBroadcast() {
+    try {
+        const { data } = await supabaseClient.from('broadcast').select('*').eq('is_active', true).limit(1).single();
+        if (!data) return;
+        document.getElementById('broadcastVideo').src = getYouTubeEmbedUrl(data.video_url);
+        document.getElementById('broadcastTitle').textContent = data.title || 'Village Broadcast';
+        document.getElementById('broadcastSection').classList.remove('hidden');
+        if (data.is_emergency) document.getElementById('emergencyBanner').classList.remove('hidden');
+    } catch (e) { console.log('Broadcast not available'); }
+}
+
+// ===== AUTH =====
+async function checkUser() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+        currentUser = session.user;
+        await loadUserData();
+        showUserStatus();
+    }
+}
+
+async function loadUserData() {
+    if (!currentUser) return;
+    try {
+        let { data: userData, error } = await supabaseClient.from('users').select('*').eq('id', currentUser.id).single();
+
+        if (error || !userData) {
+            const { data: newUser } = await supabaseClient.from('users').insert([{
+                id: currentUser.id,
+                email: currentUser.email,
+                username: currentUser.email.split('@')[0],
+                kudos: 0,
+                oid_memberships: [CONFIG.oidSlug]
+            }]).select().single();
+            userData = newUser;
+        } else {
+            if (!userData.oid_memberships.includes(CONFIG.oidSlug)) {
+                await supabaseClient.from('users').update({
+                    oid_memberships: [...userData.oid_memberships, CONFIG.oidSlug]
+                }).eq('id', currentUser.id);
+            }
+        }
+
+        const oidCount = userData.oid_memberships.length;
+        let badge = 'Villager';
+        if (oidCount >= 5) badge = 'Pollinator';
+        else if (oidCount >= 2) badge = 'Bridge Walker';
+
+        document.getElementById('userName').textContent = '@' + userData.username;
+        document.getElementById('userBadge').textContent = badge;
+        document.getElementById('userKudos').textContent = userData.kudos || 0;
+
+        await generateQRCode();
+    } catch (error) {
+        console.error('Error loading user data:', error);
+    }
+}
+
+function showUserStatus() {
+    document.getElementById('userBar').classList.remove('hidden');
+    document.getElementById('signInPrompt')?.classList.add('hidden');
+    document.getElementById('villageSignIn')?.classList.add('hidden');
+    document.getElementById('qrSection')?.classList.remove('hidden');
+}
+
+// ===== PATREON FUNCTIONS =====
+function signInWithPatreon() {
+    window.location.href = PATREON_OAUTH_URL;
+}
+
+function copyInviteLink() {
+    const userId = (window.currentUser && window.currentUser.id) ? window.currentUser.id : '';
+    const link = `${window.location.origin}${userId ? '?ref=' + userId : ''}`;
+    navigator.clipboard.writeText(link).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = link; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+    });
+    const el = document.getElementById('inviteCopied');
+    if (el) { el.classList.remove('hidden'); setTimeout(() => el.classList.add('hidden'), 3000); }
+}
+
+function restorePatreonSession() {
+    try {
+        const raw = localStorage.getItem('coinoid_patreon_session');
+        if (!raw) return;
+        const stored = JSON.parse(raw);
+        if (Date.now() > stored.expiresAt) {
+            localStorage.removeItem('coinoid_patreon_session');
+            return;
+        }
+        patreonSession = stored;
+        showPatreonStatus();
+    } catch (e) { console.warn('restorePatreonSession:', e); }
+}
+
+async function handlePatreonCallback() {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (!code) return;
+    try {
+        const res = await fetch(`/.netlify/functions/patreon-auth?code=${encodeURIComponent(code)}`);
+        if (!res.ok) throw new Error('auth failed');
+        const data = await res.json();
+        const session = { isPro: data.isPro, tier: data.tier, expiresAt: Date.now() + 86400000 };
+        localStorage.setItem('coinoid_patreon_session', JSON.stringify(session));
+        patreonSession = session;
+        showPatreonStatus();
+        window.history.replaceState({}, '', '/');
+    } catch (e) { console.warn('handlePatreonCallback:', e); }
+}
+
+function showPatreonStatus() {
+    if (!patreonSession) return;
+    const el = document.getElementById('patreonStatus');
+    if (el) {
+        el.classList.remove('hidden');
+        if (patreonSession.isPro) {
+            el.innerHTML = `<span class="text-green-600 font-bold">✓ Patreon ${patreonSession.tier || 'member'} — Pro unlocked</span>`;
+        } else {
+            el.innerHTML = `<span class="text-gray-600">Signed in — <a href="https://www.patreon.com/chrisptee" target="_blank" class="text-bronze font-semibold">upgrade for Pro</a></span>`;
+        }
+    }
+    const btn = document.getElementById('patreonSignInBtn');
+    if (btn) btn.classList.add('hidden');
+    const signInPrompt = document.getElementById('signInPrompt');
+    if (signInPrompt && patreonSession.isPro) signInPrompt.classList.add('hidden');
+    const villageSignIn = document.getElementById('villageSignIn');
+    if (villageSignIn) villageSignIn.classList.add('hidden');
+}
+
+async function signOut() {
+    await supabaseClient.auth.signOut();
+    currentUser = null;
+    location.reload();
+}
+
+async function generateQRCode() {
+    if (!currentUser) return;
+    const referralUrl = `${window.location.origin}?ref=${currentUser.id}`;
+    userQRCode = await QRCode.toDataURL(referralUrl, { width: 300, color: { dark: CONFIG.primaryColor, light: '#ffffff' } });
+    const qrImg = document.getElementById('qrImage');
+    if (qrImg) qrImg.src = userQRCode;
+}
+
+// ===== ACTIVITY FEED =====
+async function loadRecentActivity() {
+    try {
+        const { data } = await supabaseClient.from('users').select('username, created_at').order('created_at', { ascending: false }).limit(5);
+        if (data && data.length > 0) {
+            document.getElementById('activityList').innerHTML = data.map(u =>
+                `<p>${CONFIG.loadingIcon} <strong>${u.username}</strong> joined the village!</p>`
+            ).join('');
+        } else {
+            document.getElementById('activityList').innerHTML = '<p class="text-center text-gray-400">Be the first to join!</p>';
+        }
+    } catch (e) { console.error('Activity error:', e); }
+}
+
+// ===== LEADERBOARD =====
+async function loadLeaderboard() {
+    try {
+        const { data } = await supabaseClient.from('users').select('username, kudos, oid_memberships').order('kudos', { ascending: false }).limit(10);
+        if (data) {
+            document.getElementById('leaderboardList').innerHTML = data.map((u, i) => {
+                const oidCount = u.oid_memberships.length;
+                let badge = 'Villager';
+                if (oidCount >= 5) badge = 'Pollinator';
+                else if (oidCount >= 2) badge = 'Bridge Walker';
+                return `<div class="flex items-center justify-between bg-cream p-4 rounded-xl">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xl font-bold text-bronze">#${i+1}</span>
+                        <span class="text-sm">${badge}</span>
+                        <span class="font-bold">@${u.username}</span>
+                    </div>
+                    <span class="text-bronze font-bold">${u.kudos} Kudos</span>
+                </div>`;
+            }).join('');
+        }
+    } catch (e) { console.error('Leaderboard error:', e); }
+}
+
+// ===== LOADING TIMER =====
+function startLoadingTimer() {
+    loadingStartTime = Date.now();
+    const timerEl = document.getElementById('loadingTimer');
+    const msgEl = document.getElementById('loadingMessage');
+    let msgIdx = 0;
+
+    loadingTimerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - loadingStartTime) / 1000);
+        const m = Math.floor(elapsed / 60);
+        const s = elapsed % 60;
+        timerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+    }, 1000);
+
+    msgEl.textContent = patienceMessages[0];
+    messageRotationInterval = setInterval(() => {
+        msgIdx = (msgIdx + 1) % patienceMessages.length;
+        msgEl.textContent = patienceMessages[msgIdx];
+    }, 3000);
+}
+
+function stopLoadingTimer() {
+    if (loadingTimerInterval) { clearInterval(loadingTimerInterval); loadingTimerInterval = null; }
+    if (messageRotationInterval) { clearInterval(messageRotationInterval); messageRotationInterval = null; }
+    document.getElementById('loadingTimer').textContent = '';
+}
+
+// ===== FETCH WITH RETRY =====
+async function fetchWithRetry(url, options, maxRetries = 3) {
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const response = await fetch(url, options);
+            if (response.ok) return response;
+            if (response.status === 503 && i < maxRetries - 1) {
+                await new Promise(r => setTimeout(r, Math.pow(2, i + 1) * 1000));
+                continue;
+            }
+            return response;
+        } catch (error) {
+            if (i === maxRetries - 1) throw error;
+            await new Promise(r => setTimeout(r, Math.pow(2, i + 1) * 1000));
+        }
+    }
+}
+
+// ===== IMAGE COMPRESSION =====
+async function compressImage(file, maxSize = 800, quality = 0.7) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let w = img.width, h = img.height;
+                if (w > h) { if (w > maxSize) { h *= maxSize / w; w = maxSize; } }
+                else { if (h > maxSize) { w *= maxSize / h; h = maxSize; } }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                resolve({ base64: dataUrl.split(',')[1], dataUrl });
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// ===== IMAGE UPLOAD =====
+async function handleUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    document.getElementById('resultView').classList.add('hidden');
+    document.getElementById('loadingView').classList.remove('hidden');
+    startLoadingTimer();
+
+    try {
+        const compressed = await compressImage(file, 800, 0.7);
+
+        const response = await fetchWithRetry('/.netlify/functions/analyze-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                image: compressed.base64,
+                mode: currentMode,
+                oidType: CONFIG.oidSlug,
+                userId: currentUser?.id
+            })
+        }, 3);
+
+        const data = await response.json();
+
+        currentResult = {
+            mode: currentMode,
+            image: compressed.dataUrl,
+            ...data
+        };
+
+        showResult(currentResult);
+
+        if (currentUser) {
+            await awardKudos(10, 'Image analysis');
+            document.getElementById('kudosEarned').classList.remove('hidden');
+            document.getElementById('signInPrompt').classList.add('hidden');
+            await loadUserData();
+        }
+    } catch (error) {
+        console.error('Upload error:', error);
+        alert('Error analyzing image. Give it another go, mate.');
+        resetToHome();
+    }
+
+    input.value = '';
+}
+
+function showResult(result) {
+    stopLoadingTimer();
+    document.getElementById('loadingView').classList.add('hidden');
+    document.getElementById('resultView').classList.remove('hidden');
+
+    document.getElementById('resultImage').src = result.image;
+    document.getElementById('resultTitle').textContent = result.title || 'Identified!';
+
+    // Parse Amazon search from description
+    const parsed = parseAmazonSearch(result.description || '');
+    document.getElementById('resultDescription').innerHTML = parsed.description.replace(/\n/g, '<br>');
+
+    const amazonDiv = document.getElementById('amazonLink');
+    if (parsed.amazonUrl) {
+        amazonDiv.innerHTML = `<a href="${parsed.amazonUrl}" target="_blank" class="amazon-btn">Search "${parsed.amazonSearch}" on Amazon</a>`;
+    } else {
+        amazonDiv.innerHTML = '';
+    }
+
+    const priceEl = document.getElementById('resultPrice');
+    if (result.price) {
+        priceEl.textContent = 'Est. Value: ' + result.price;
+        priceEl.classList.remove('hidden');
+    } else {
+        priceEl.classList.add('hidden');
+    }
+
+    document.getElementById('resultAttribution').textContent = currentUser
+        ? `Identified by @${currentUser.email.split('@')[0]}`
+        : `Identified by ${CONFIG.oidName}`;
+}
+
+function parseAmazonSearch(description) {
+    const match = description.match(/AMAZON_SEARCH:\s*(.+?)(\n|$)/i);
+    if (match) {
+        return {
+            description: description.replace(/AMAZON_SEARCH:\s*.+?(\n|$)/i, '').trim(),
+            amazonSearch: match[1].trim(),
+            amazonUrl: `https://www.amazon.co.uk/s?k=${encodeURIComponent(match[1].trim())}&tag=${CONFIG.amazonTag}`
+        };
+    }
+    return { description, amazonSearch: null, amazonUrl: null };
+}
+
+function resetToHome() {
+    stopLoadingTimer();
+    document.getElementById('resultView').classList.add('hidden');
+    document.getElementById('loadingView').classList.add('hidden');
+    document.getElementById('kudosEarned')?.classList.add('hidden');
+    currentResult = null;
+    ['cameraInput', 'galleryInput'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+}
+
+// ===== SHARE & DOWNLOAD =====
+async function shareResult() {
+    if (!currentResult) return;
+    const shareData = {
+        title: currentResult.title || CONFIG.oidName + ' Result',
+        text: `${currentResult.title}\n\n${(currentResult.description || '').substring(0, 200)}...\n\nIdentified by ${CONFIG.oidName}`,
+        url: window.location.href
+    };
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        try { await navigator.share(shareData); } catch (e) { if (e.name !== 'AbortError') fallbackShare(shareData); }
+    } else {
+        fallbackShare(shareData);
+    }
+}
+
+function fallbackShare(shareData) {
+    navigator.clipboard.writeText(`${shareData.title}\n\n${shareData.text}\n\n${shareData.url}`).then(() => {
+        alert('Copied to clipboard! Share it at the coin fair, mate.');
+    }).catch(() => { alert('Could not copy. Share manually.'); });
+}
+
+function wrapText(ctx, text, maxWidth) {
+    const words = text.split(' ');
+    const lines = [];
+    let line = '';
+    for (const word of words) {
+        const test = line + word + ' ';
+        if (ctx.measureText(test).width > maxWidth && line.length > 0) {
+            lines.push(line.trim());
+            line = word + ' ';
+        } else { line = test; }
+    }
+    if (line.trim()) lines.push(line.trim());
+    return lines;
+}
+
+async function downloadResult() {
+    if (!currentResult) return;
+    const canvas = document.getElementById('resultCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 1080; canvas.height = 1350;
+
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#2d1a0f');
+    gradient.addColorStop(1, '#1a0e08');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const img = new Image();
+    img.onload = () => {
+        const scale = Math.min(800 / img.width, 600 / img.height);
+        const w = img.width * scale, h = img.height * scale;
+        const x = (canvas.width - w) / 2, y = 100;
+
+        ctx.save();
+        ctx.shadowColor = 'rgba(0,0,0,0.4)';
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetY = 10;
+        ctx.drawImage(img, x, y, w, h);
+        ctx.restore();
+
+        ctx.fillStyle = '#cd7f32';
+        ctx.font = 'bold 48px Outfit, sans-serif';
+        ctx.textAlign = 'center';
+        const titleLines = wrapText(ctx, currentResult.title || CONFIG.oidName, 900);
+        let titleY = y + h + 80;
+        titleLines.forEach(line => { ctx.fillText(line, canvas.width / 2, titleY); titleY += 55; });
+
+        ctx.fillStyle = '#faf5e1';
+        ctx.font = '28px Outfit, sans-serif';
+        const parsed = parseAmazonSearch(currentResult.description || '');
+        const descLines = wrapText(ctx, parsed.description.substring(0, 300), 900);
+        let descY = titleY + 30;
+        descLines.slice(0, 6).forEach(line => { ctx.fillText(line, canvas.width / 2, descY); descY += 38; });
+
+        ctx.fillStyle = '#cd7f32';
+        ctx.font = 'bold 28px Outfit, sans-serif';
+        ctx.fillText(currentUser ? `@${currentUser.email.split('@')[0]}` : CONFIG.oidName, canvas.width / 2, canvas.height - 180);
+
+        ctx.font = 'bold 36px Outfit, sans-serif';
+        ctx.fillText('coin-oid.co.uk', canvas.width / 2, canvas.height - 120);
+
+        ctx.fillStyle = '#faf5e1';
+        ctx.font = '24px Outfit, sans-serif';
+        ctx.fillText('Every coin tells a story.', canvas.width / 2, canvas.height - 70);
+
+        const link = document.createElement('a');
+        link.download = 'coin-oid-result.png';
+        link.href = canvas.toDataURL();
+        link.click();
+    };
+    img.src = currentResult.image;
+}
+
+function downloadQR() {
+    if (!userQRCode) return;
+    const link = document.createElement('a');
+    link.download = 'coin-oid-referral-qr.png';
+    link.href = userQRCode;
+    link.click();
+}
+
+// ===== KUDOS =====
+async function awardKudos(amount, reason) {
+    if (!currentUser) return;
+    try {
+        await supabaseClient.rpc('increment_kudos', { user_id: currentUser.id, amount });
+        await supabaseClient.from('kudos_transactions').insert([{ user_id: currentUser.id, amount, reason }]);
+    } catch (e) { console.error('Kudos error:', e); }
+}
+
+// ===== CHATBOT — ASK OLD PENNY =====
+function askPennyQuick(question) {
+    document.getElementById('pennyInput').value = question;
+    askPenny();
+}
+
+async function askPenny() {
+    const input = document.getElementById('pennyInput');
+    const question = input.value.trim();
+    if (!question) return;
+    input.value = '';
+
+    const chatEl = document.getElementById('chatMessages');
+
+    // User message
+    chatEl.innerHTML += `<div class="flex justify-end mb-3"><div class="chat-bubble chat-user">${escapeHtml(question)}</div></div>`;
+
+    // Typing indicator
+    const typingId = 'typing-' + Date.now();
+    chatEl.innerHTML += `<div id="${typingId}" class="flex items-start gap-2 mb-3">
+        <span class="text-2xl flex-shrink-0">🪙</span>
+        <div class="chat-bubble chat-penny chat-typing"><span>.</span><span>.</span><span>.</span></div>
+    </div>`;
+    chatEl.scrollTop = chatEl.scrollHeight;
+
+    chatHistory.push({ role: 'user', text: question });
+
+    try {
+        const response = await fetch('/.netlify/functions/chat-penny', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question, history: chatHistory.slice(-6) })
+        });
+
+        const data = await response.json();
+        const answer = data.answer || "Had a senior moment there. Ask me again?";
+
+        chatHistory.push({ role: 'model', text: answer });
+
+        // Remove typing, add answer
+        const typingEl = document.getElementById(typingId);
+        if (typingEl) typingEl.remove();
+
+        chatEl.innerHTML += `<div class="flex items-start gap-2 mb-3">
+            <span class="text-2xl flex-shrink-0">🪙</span>
+            <div class="chat-bubble chat-penny">${escapeHtml(answer)}</div>
+        </div>`;
+        chatEl.scrollTop = chatEl.scrollHeight;
+
+    } catch (error) {
+        console.error('Chat error:', error);
+        const typingEl = document.getElementById(typingId);
+        if (typingEl) typingEl.remove();
+        chatEl.innerHTML += `<div class="flex items-start gap-2 mb-3">
+            <span class="text-2xl flex-shrink-0">🪙</span>
+            <div class="chat-bubble chat-penny">Something's gone a bit wonky. Like a coin rolling under the counter. Try again in a tick.</div>
+        </div>`;
+        chatEl.scrollTop = chatEl.scrollHeight;
+    }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML.replace(/\n/g, '<br>');
+}
+
+// ===== REFERRAL CODE =====
+const urlParams = new URLSearchParams(window.location.search);
+const refCode = urlParams.get('ref');
+if (refCode) localStorage.setItem('referredBy', refCode);
+
+// ===== MEET — what3words =====
+async function meetGetLocation(label) {
+    meetCurrentLabel = label;
+    const card = document.getElementById('meetLocationCard');
+    const w3wEl = document.getElementById('meetW3W');
+    const coordsEl = document.getElementById('meetCoordsDisplay');
+    const labelEl = document.getElementById('meetLabelDisplay');
+    if (card) card.classList.remove('hidden');
+    if (labelEl) labelEl.textContent = label + ':';
+    if (w3wEl) { w3wEl.textContent = 'Finding location…'; w3wEl.setAttribute('aria-label', 'Finding your location'); }
+    if (coordsEl) coordsEl.textContent = '';
+
+    if (!navigator.geolocation) {
+        if (w3wEl) w3wEl.textContent = 'Geolocation not available';
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        if (coordsEl) coordsEl.textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+        try {
+            const res = await fetch(`https://api.what3words.com/v3/convert-to-3wa?coordinates=${lat},${lng}&language=en&format=json&key=${W3W_API_KEY}`);
+            const data = await res.json();
+            if (data.words) {
+                meetCurrentW3W = data.words;
+                if (w3wEl) {
+                    w3wEl.textContent = '///' + data.words;
+                    w3wEl.setAttribute('aria-label', 'Your what3words address is: ' + data.words);
+                }
+                document.getElementById('meetMapLink').href = `https://what3words.com/${data.words}`;
+                document.getElementById('meetQrCard')?.classList.remove('hidden');
+                meetGenerateQR();
+            } else {
+                if (w3wEl) w3wEl.textContent = 'Could not get address';
+            }
+        } catch (e) {
+            if (w3wEl) w3wEl.textContent = 'Network error — try again';
+        }
+    }, () => {
+        if (w3wEl) w3wEl.textContent = 'Location denied — use manual entry below';
+    }, { enableHighAccuracy: true, timeout: 10000 });
+}
+
+function meetCopy() {
+    if (!meetCurrentW3W) return;
+    const text = `${meetCurrentLabel}: ///${meetCurrentW3W} — https://what3words.com/${meetCurrentW3W}`;
+    navigator.clipboard.writeText(text).then(() => alert('Copied!')).catch(() => alert(text));
+}
+
+function meetShare() {
+    if (!meetCurrentW3W) return;
+    const text = meetCurrentLabel
+        ? `${meetCurrentLabel}: ///${meetCurrentW3W} — https://what3words.com/${meetCurrentW3W}`
+        : `///${meetCurrentW3W} — https://what3words.com/${meetCurrentW3W}`;
+    if (navigator.share) {
+        navigator.share({ title: 'Meet me here', text, url: `https://what3words.com/${meetCurrentW3W}` }).catch(() => {});
+    } else {
+        navigator.clipboard.writeText(text).then(() => alert('Link copied!')).catch(() => alert(text));
+    }
+}
+
+function meetGenerateQR() {
+    if (!meetCurrentW3W) return;
+    const canvas = document.getElementById('meetQrCanvas');
+    if (!canvas) return;
+    const url = `https://what3words.com/${meetCurrentW3W}`;
+    QRCode.toCanvas(canvas, url, {
+        width: 220,
+        color: { dark: '#cd7f32', light: '#faf5e1' }
+    }, (err) => { if (err) console.warn('QR error:', err); });
+}
+
+function meetDownloadQR() {
+    const canvas = document.getElementById('meetQrCanvas');
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = `coin-oid-meet-${meetCurrentW3W || 'location'}.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+}
+
+function meetAutoSuggest(value) {
+    clearTimeout(meetAutoSuggestTimer);
+    const list = document.getElementById('meetSuggestList');
+    if (!value || value.length < 3) { if (list) list.classList.add('hidden'); return; }
+    meetAutoSuggestTimer = setTimeout(async () => {
+        try {
+            const res = await fetch(`https://api.what3words.com/v3/autosuggest?input=${encodeURIComponent(value)}&key=${W3W_API_KEY}`);
+            const data = await res.json();
+            if (!list) return;
+            if (data.suggestions && data.suggestions.length > 0) {
+                list.innerHTML = data.suggestions.slice(0, 5).map(s =>
+                    `<div onclick="meetSelectSuggestion('${s.words}')" class="px-4 py-3 cursor-pointer hover:bg-amber-50 border-b last:border-0 font-semibold" style="color:#1a0e08; min-height:44px; display:flex; align-items:center;">
+                        <span style="color:#cd7f32; margin-right:6px;">///</span>${s.words}
+                        <span class="text-xs text-gray-400 ml-auto">${s.nearestPlace || ''}</span>
+                    </div>`
+                ).join('');
+                list.classList.remove('hidden');
+            } else {
+                list.classList.add('hidden');
+            }
+        } catch (e) { console.warn('autosuggest:', e); }
+    }, 280);
+}
+
+function meetSelectSuggestion(words) {
+    document.getElementById('meetManualInput').value = words;
+    document.getElementById('meetSuggestList')?.classList.add('hidden');
+    meetLookup();
+}
+
+async function meetLookup() {
+    const input = document.getElementById('meetManualInput').value.trim().replace(/^\/\/\//, '');
+    const status = document.getElementById('meetManualStatus');
+    if (!input || !input.includes('.')) {
+        if (status) { status.textContent = 'Enter three words separated by dots (e.g. filled.count.soap)'; status.classList.remove('hidden'); }
+        return;
+    }
+    if (status) { status.textContent = 'Looking up…'; status.classList.remove('hidden'); }
+    try {
+        const res = await fetch(`https://api.what3words.com/v3/convert-to-coordinates?words=${encodeURIComponent(input)}&key=${W3W_API_KEY}`);
+        const data = await res.json();
+        if (data.coordinates) {
+            meetCurrentW3W = input;
+            const card = document.getElementById('meetLocationCard');
+            if (card) card.classList.remove('hidden');
+            const w3wEl = document.getElementById('meetW3W');
+            if (w3wEl) { w3wEl.textContent = '///' + input; w3wEl.setAttribute('aria-label', 'what3words address: ' + input); }
+            document.getElementById('meetMapLink').href = `https://what3words.com/${input}`;
+            document.getElementById('meetCoordsDisplay').textContent = `${data.coordinates.lat.toFixed(5)}, ${data.coordinates.lng.toFixed(5)}`;
+            document.getElementById('meetQrCard')?.classList.remove('hidden');
+            meetGenerateQR();
+            if (status) status.classList.add('hidden');
+        } else {
+            if (status) { status.textContent = 'Address not found — check the three words'; status.classList.remove('hidden'); }
+        }
+    } catch (e) {
+        if (status) { status.textContent = 'Network error — try again'; status.classList.remove('hidden'); }
+    }
+}
+</script>
+</body>
+</html>
