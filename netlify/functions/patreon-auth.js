@@ -34,7 +34,7 @@ exports.handler = async (event) => {
         const { access_token } = await tokenRes.json();
 
         const identityRes = await fetch(
-            'https://www.patreon.com/api/oauth2/v2/identity?include=memberships,campaign&fields[member]=patron_status,currently_entitled_amount_cents,campaign_id',
+            'https://www.patreon.com/api/oauth2/v2/identity?include=memberships,campaign&fields[member]=patron_status,currently_entitled_amount_cents',
             { headers: { Authorization: `Bearer ${access_token}` } }
         );
 
