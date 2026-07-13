@@ -345,6 +345,16 @@
             <a href="https://spicylister.com" target="_blank" class="btn btn-gold w-full text-center">Try SpicyLister Free</a>
         </div>
 
+        <!-- Honesty box — shown once, after the identification, never before -->
+        <div class="card text-center" style="background:#fff7ed;border:1px solid #fde4c8;">
+            <p class="text-sm" style="color:#7a5230;line-height:1.6;">
+                This is free, always will be — that's not changing. It saved you time just now, and it costs real money to keep running. Tell a mate who'd use it too, or pay it forward some other way. That's genuinely enough.
+            </p>
+            <p id="honestyBoxAsk" class="text-sm mt-2" style="color:#b8956a;">
+                If you'd rather say thanks with money: a one-off <a href="https://buymeacoffee.com/chrispteemagician" target="_blank" rel="noreferrer" class="font-bold" style="color:#cd7f32;text-decoration:underline;">buy me a coffee</a> covers it, or <a href="https://www.patreon.com/chrisptee" target="_blank" rel="noreferrer" class="font-bold" style="color:#cd7f32;text-decoration:underline;">Patreon</a> if you want to be a regular. Either way, nothing here was ever locked behind it.
+            </p>
+        </div>
+
         <!-- Sign in prompt -->
         <div id="signInPrompt" class="card text-center border-2 border-bronze">
             <p class="font-semibold mb-2">Join on Patreon to earn kudos, track your finds, and unlock village features!</p>
@@ -1001,6 +1011,10 @@ const CONFIG = {
 // ===== PATREON AUTH =====
 const PATREON_CLIENT_ID = 'A-K7cVCZBl7mQZDlrq0obIq7Jm0RPYAMGstfBsUyEeX-5e6WvU24ZWMTGBuypxot';
 const PATREON_OAUTH_URL = `https://www.patreon.com/oauth2/authorize?response_type=code&client_id=${PATREON_CLIENT_ID}&redirect_uri=https://coin-oid.co.uk/auth/patreon&scope=identity%20identity.memberships`;
+const PATREON_PAGE = 'https://www.patreon.com/chrisptee';
+// Honesty box — one-off "thanks", no account needed. Shown once, after the coin's
+// already been identified for free. Patreon is for people who want to be regulars.
+const HONESTY_BOX_URL = 'https://buymeacoffee.com/chrispteemagician';
 
 // ===== w3w =====
 const W3W_API_KEY = 'R7VL7Q93';
@@ -1291,9 +1305,9 @@ function showPatreonStatus() {
     if (el) {
         el.classList.remove('hidden');
         if (patreonSession.isPro) {
-            el.innerHTML = `<span class="text-green-600 font-bold">✓ Patreon ${patreonSession.tier || 'member'} — Pro unlocked</span>`;
+            el.innerHTML = `<span class="text-green-600 font-bold">✓ Patreon ${patreonSession.tier || 'member'}</span>`;
         } else {
-            el.innerHTML = `<span class="text-gray-600">Signed in — <a href="https://www.patreon.com/chrisptee" target="_blank" class="text-bronze font-semibold">upgrade for Pro</a></span>`;
+            el.innerHTML = `<span class="text-gray-600">Signed in</span>`;
         }
     }
     const btn = document.getElementById('patreonSignInBtn');
@@ -1302,6 +1316,8 @@ function showPatreonStatus() {
     if (signInPrompt && patreonSession.isPro) signInPrompt.classList.add('hidden');
     const villageSignIn = document.getElementById('villageSignIn');
     if (villageSignIn) villageSignIn.classList.add('hidden');
+    const honestyBoxAsk = document.getElementById('honestyBoxAsk');
+    if (honestyBoxAsk && patreonSession.isPro) honestyBoxAsk.classList.add('hidden');
 }
 
 async function signOut() {
