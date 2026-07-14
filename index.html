@@ -210,19 +210,6 @@
 
 
 <!-- ==================== AGE VERIFICATION ==================== -->
-<div id="ageModal" class="modal-overlay hidden">
-    <div class="modal-content text-center">
-        <div class="text-5xl mb-3">🪙</div>
-        <h2 class="text-2xl font-bold mb-3">Welcome to Coin-Oid</h2>
-        <p class="text-gray-600 mb-6">The Numismatist's Table (numismatist — fancy word for coin collector!). An adult-focused educational community. Kids are welcome with parent permission.</p>
-        <div class="space-y-3">
-            <button onclick="confirmAge('adult')" class="w-full btn btn-bronze">I'm 18+ (Continue)</button>
-            <button onclick="confirmAge('parent')" class="w-full btn" style="background:#3b82f6;color:white">I'm a Parent/Guardian</button>
-            <button onclick="confirmAge('under18')" class="w-full btn btn-dark">I'm Under 18 (Need Parent OK)</button>
-        </div>
-        <p class="text-xs text-gray-500 mt-6">Safe space for skill-sharing across generations. No social media nonsense. Just real humans helping real humans.</p>
-    </div>
-</div>
 
 <!-- ==================== HEADER ==================== -->
 <header class="header-gradient text-center py-10 px-4">
@@ -847,7 +834,7 @@
             <a href="https://cannabin-oid.co.uk" class="oid-pill bg-green-100 text-green-800">🌿 Cannabin-Oid</a>
             <a href="https://fish-oid.co.uk" class="oid-pill bg-teal-100 text-teal-800">🐟 Fish-Oid</a>
             <a href="https://designer-oid.co.uk" class="oid-pill bg-rose-100 text-rose-800">👗 Designer-Oid</a>
-            <a href="https://miniature-oid.co.uk" class="oid-pill bg-indigo-100 text-indigo-800">🔍 Miniature-Oid</a>
+            <a href="https://miniature-oid.netlify.app" class="oid-pill bg-indigo-100 text-indigo-800">🔍 Miniature-Oid</a>
             <a href="https://spicylister.com" class="oid-pill bg-red-100 text-red-800">🌶️ SpicyLister</a>
         </div>
     </div>
@@ -1058,7 +1045,6 @@ const patienceMessages = [
 // ===== INIT =====
 window.onload = async function() {
     // UI first — always safe
-    checkAgeVerification();
     initSectionReveal();
     loadBroadcast();
 
@@ -1155,22 +1141,6 @@ function setMode(mode) {
         roastBtn.className = 'flex-1 btn btn-bronze text-sm';
         title.textContent = 'Roast My Coins';
         subtitle.textContent = 'Show us your collection and prepare for brutal honesty';
-    }
-}
-
-// ===== AGE VERIFICATION =====
-function checkAgeVerification() {
-    if (!localStorage.getItem('ageVerified')) {
-        document.getElementById('ageModal').classList.remove('hidden');
-    }
-}
-
-function confirmAge(type) {
-    localStorage.setItem('ageVerified', type);
-    localStorage.setItem('ageVerifiedDate', new Date().toISOString());
-    document.getElementById('ageModal').classList.add('hidden');
-    if (type === 'under18') {
-        alert('Please ask your parent or guardian to sign up with you. They can create an account and add you as a supervised user.');
     }
 }
 
