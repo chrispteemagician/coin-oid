@@ -1304,7 +1304,8 @@ async function loadRecentActivity() {
         const { data } = await supabaseClient.from('users').select('username, created_at').order('created_at', { ascending: false }).limit(5);
         if (data && data.length > 0) {
             document.getElementById('activityList').innerHTML = data.map(u =>
-                `<p>${CONFIG.loadingIcon} <strong>${u.username}</strong> joined the village!</p>`
+                // username derives from the local part of a user-supplied signup email — untrusted, must escape
+                `<p>${CONFIG.loadingIcon} <strong>${escapeHtml(u.username)}</strong> joined the village!</p>`
             ).join('');
         } else {
             document.getElementById('activityList').innerHTML = '<p class="text-center text-gray-400">Be the first to join!</p>';
@@ -1326,7 +1327,7 @@ async function loadLeaderboard() {
                     <div class="flex items-center gap-3">
                         <span class="text-xl font-bold text-bronze">#${i+1}</span>
                         <span class="text-sm">${badge}</span>
-                        <span class="font-bold">@${u.username}</span>
+                        <span class="font-bold">@${escapeHtml(u.username)}</span>
                     </div>
                     <span class="text-bronze font-bold">${u.kudos} Kudos</span>
                 </div>`;
@@ -1462,11 +1463,13 @@ function showResult(result) {
 
     // Parse Amazon search from description
     const parsed = parseAmazonSearch(result.description || '');
-    document.getElementById('resultDescription').innerHTML = parsed.description.replace(/\n/g, '<br>');
+    // description/amazonSearch originate from Gemini's analysis of a user-uploaded image —
+    // treat as untrusted (indirect prompt injection could smuggle HTML through), so escape before render
+    document.getElementById('resultDescription').innerHTML = escapeHtml(parsed.description);
 
     const amazonDiv = document.getElementById('amazonLink');
     if (parsed.amazonUrl) {
-        amazonDiv.innerHTML = `<a href="${parsed.amazonUrl}" target="_blank" class="amazon-btn">Search "${parsed.amazonSearch}" on Amazon</a>`;
+        amazonDiv.innerHTML = `<a href="${parsed.amazonUrl}" target="_blank" class="amazon-btn">Search "${escapeHtml(parsed.amazonSearch)}" on Amazon</a>`;
     } else {
         amazonDiv.innerHTML = '';
     }
