@@ -1,0 +1,32 @@
+# Coin-Oid
+
+> Free AI-powered identification tool for coins, banknotes, medals and tokens. Upload a photo and Coin-Oid (Old Penny) identifies it, grades it, and gives a value estimate. Ask Old Penny anything about numismatics, fakes, grading, or metal detecting finds. Part of the FeelFamous -Oid Ecosystem.
+
+Live at: https://coin-oid.co.uk
+
+## Core tool (free, no sign-in required)
+
+- Photo identification, grading and valuation of coins, banknotes, medals and tokens.
+- Ask Old Penny — a chatbot voiced as a 68-year-old East London market trader, on hand at the Portobello Road coin stalls since he was 12. Answers questions about numismatics, fakes, grading, and metal detecting finds.
+- A "roast" mode gives Old Penny's market-stall verdict on your coin instead of a formal identification.
+- Meet tab — a what3words-based meeting point generator for coin fairs.
+
+The identification tool, the chat, and roast mode are all free forever, with no sign-in wall and no paid tier required.
+
+## Membership (Patreon — optional, supports hosting, does not gate the tool)
+
+- Villager — £4.95/month
+- Elder — earned, not bought
+- Founder — £14.95/month
+
+Membership funds a hosted hut/hamlet page, kudos, leaderboard and activity feed — none of it is required to use the identification tool or Old Penny.
+
+## Contact
+
+- Email: chris@chrisptee.co.uk
+- Patreon: https://www.patreon.com/chrisptee
+- One-off support: https://buymeacoffee.com/chrispteemagician
+
+## About
+
+Built by Chris P Taylor (Doc Strange), part of the wider FeelFamous -Oid ecosystem of free AI identification tools.
