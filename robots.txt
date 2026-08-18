@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://coin-oid.co.uk/sitemap.xml
+Sitemap: https://coin-oid.netlify.app/sitemap.xml

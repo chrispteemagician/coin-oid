@@ -12,7 +12,17 @@ or metal detecting finds.
 
 Part of the FeelFamous -Oid Ecosystem.
 
-**Live at:** coin-oid.co.uk
+**Live at:** coin-oid.netlify.app — confirmed 2026-08-18 against the real
+Netlify project record (`get-project` on site ID `12577c42-...`); no
+`.co.uk` custom domain is attached, despite this file previously saying
+`coin-oid.co.uk`. Don't reintroduce `coin-oid.co.uk` in canonical/OG tags,
+robots.txt/sitemap.xml, watermark text, or cross-links elsewhere in the
+ecosystem until a real `.co.uk` domain is actually attached in Netlify.
+**Exception, left alone deliberately:** `index.html`'s `PATREON_OAUTH_URL`
+still uses `coin-oid.co.uk/auth/patreon` as its `redirect_uri` — that must
+match whatever's registered in the Patreon developer dashboard, which
+wasn't visible this session. Confirm/update the registered Redirect URI
+before changing that one line, or Patreon sign-in will break.
 
 ---
 

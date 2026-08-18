@@ -2,7 +2,7 @@
 
 > Free AI-powered identification tool for coins, banknotes, medals and tokens. Upload a photo and Coin-Oid (Old Penny) identifies it, grades it, and gives a value estimate. Ask Old Penny anything about numismatics, fakes, grading, or metal detecting finds. Part of the FeelFamous -Oid Ecosystem.
 
-Live at: https://coin-oid.co.uk
+Live at: https://coin-oid.netlify.app
 
 ## Core tool (free, no sign-in required)
 

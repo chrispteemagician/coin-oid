@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Coin-Oid | The Numismatist's Table</title>
     <meta name="description" content="AI-powered coin identification, grading, and valuation. Upload a photo of any coin, token, medal or banknote. Free forever. Part of the FeelFamous village ecosystem.">
-    <link rel="canonical" href="https://coin-oid.co.uk/">
+    <link rel="canonical" href="https://coin-oid.netlify.app/">
     <meta name="theme-color" content="#cd7f32">
     <link rel="icon" type="image/jpeg" href="coin-oid.jpg">
 
@@ -13,19 +13,19 @@
     <meta property="og:site_name" content="Coin-Oid">
     <meta property="og:title" content="Coin-Oid | The Numismatist's Table">
     <meta property="og:description" content="AI-powered coin identification, grading, and valuation. Upload a photo of any coin, token, medal or banknote. Free forever. Part of the FeelFamous village ecosystem.">
-    <meta property="og:url" content="https://coin-oid.co.uk/">
-    <meta property="og:image" content="https://coin-oid.co.uk/coin-oid.jpg">
+    <meta property="og:url" content="https://coin-oid.netlify.app/">
+    <meta property="og:image" content="https://coin-oid.netlify.app/coin-oid.jpg">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Coin-Oid | The Numismatist's Table">
     <meta name="twitter:description" content="AI-powered coin identification, grading, and valuation. Upload a photo of any coin, token, medal or banknote. Free forever. Part of the FeelFamous village ecosystem.">
-    <meta name="twitter:image" content="https://coin-oid.co.uk/coin-oid.jpg">
+    <meta name="twitter:image" content="https://coin-oid.netlify.app/coin-oid.jpg">
 
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
       "name": "Coin-Oid",
-      "url": "https://coin-oid.co.uk/",
+      "url": "https://coin-oid.netlify.app/",
       "description": "Free AI-powered identification tool for coins, banknotes, medals and tokens. Upload a photo and Coin-Oid identifies it, grades it, and gives a value estimate. Ask Old Penny anything about numismatics, fakes, grading, or metal detecting finds.",
       "applicationCategory": "LifestyleApplication",
       "operatingSystem": "Any",
@@ -853,7 +853,7 @@
             <a href="https://camera-oid.co.uk" class="oid-pill bg-orange-100 text-orange-800">📷 Camera-Oid</a>
             <a href="https://stamp-oid.co.uk" class="oid-pill bg-rose-100 text-rose-800">📮 Stamp-Oid</a>
             <a href="https://cannabin-oid.co.uk" class="oid-pill bg-green-100 text-green-800">🌿 Cannabin-Oid</a>
-            <a href="https://fish-oid.co.uk" class="oid-pill bg-teal-100 text-teal-800">🐟 Fish-Oid</a>
+            <a href="https://fish-oid.netlify.app" class="oid-pill bg-teal-100 text-teal-800">🐟 Fish-Oid</a>
             <a href="https://designer-oid.co.uk" class="oid-pill bg-rose-100 text-rose-800">👗 Designer-Oid</a>
             <a href="https://miniature-oid.netlify.app" class="oid-pill bg-indigo-100 text-indigo-800">🔍 Miniature-Oid</a>
             <a href="https://spicylister.com" class="oid-pill bg-red-100 text-red-800">🌶️ SpicyLister</a>
@@ -1018,6 +1018,11 @@ const CONFIG = {
 
 // ===== PATREON AUTH =====
 const PATREON_CLIENT_ID = 'A-K7cVCZBl7mQZDlrq0obIq7Jm0RPYAMGstfBsUyEeX-5e6WvU24ZWMTGBuypxot';
+// NOT changed to coin-oid.netlify.app despite the domain fix elsewhere on this page (2026-08-18 audit) —
+// this redirect_uri must match whatever's registered in the Patreon developer dashboard for this app,
+// which this session can't see. Changing it here without also updating Patreon's app settings would
+// break sign-in the same way miniature-oid's CLAUDE.md documents for its own domain migration. Flag to
+// Chris: confirm/update the registered Patreon Redirect URI before changing this line.
 const PATREON_OAUTH_URL = `https://www.patreon.com/oauth2/authorize?response_type=code&client_id=${PATREON_CLIENT_ID}&redirect_uri=https://coin-oid.co.uk/auth/patreon&scope=identity%20identity.memberships`;
 const PATREON_PAGE = 'https://www.patreon.com/chrisptee';
 // Honesty box — one-off "thanks", no account needed. Shown once, after the coin's
@@ -1618,7 +1623,7 @@ async function downloadResult() {
         ctx.fillText(currentUser ? `@${currentUser.email.split('@')[0]}` : CONFIG.oidName, canvas.width / 2, canvas.height - 180);
 
         ctx.font = 'bold 36px Outfit, sans-serif';
-        ctx.fillText('coin-oid.co.uk', canvas.width / 2, canvas.height - 120);
+        ctx.fillText('coin-oid.netlify.app', canvas.width / 2, canvas.height - 120);
 
         ctx.fillStyle = '#faf5e1';
         ctx.font = '24px Outfit, sans-serif';
