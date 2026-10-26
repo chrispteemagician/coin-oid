@@ -9,6 +9,12 @@
   directory = "netlify/functions"
 
 [[redirects]]
+  from = "/*"
+  to = "https://feelfamous.co.uk/coin"
+  status = 301
+  force = true
+
+[[redirects]]
   from = "/auth/patreon"
   to = "/index.html"
   status = 200
